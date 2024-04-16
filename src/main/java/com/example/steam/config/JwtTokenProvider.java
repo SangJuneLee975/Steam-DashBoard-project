@@ -1,8 +1,7 @@
 package com.example.steam.config;
 
-import com.example.steam.DTO.CustomUserDetails;
-import com.example.steam.DTO.JwtToken;
-import com.example.steam.DTO.User;
+import com.example.steam.dto.CustomUserDetails;
+import com.example.steam.dto.JwtToken;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import io.jsonwebtoken.*;
@@ -141,23 +140,17 @@ public class JwtTokenProvider {
         long now = (new Date()).getTime();
         Date accessTokenExpiresIn = new Date(now + 86400000); //   24시간 후 만료 설정
 
-
-        User user = userRepository.findByUserId(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-
         return Jwts.builder()
                 .setSubject(username)
                 .claim("auth", authorities.stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.joining(",")))
-                .claim("nickname", user.getNickname()) // 닉네임 클레임 추가
+
 
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
-
 
     // 리프레시 토큰 검증 메서드
     public boolean validateRefreshToken(String token) {

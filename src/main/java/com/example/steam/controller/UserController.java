@@ -1,11 +1,10 @@
 package com.example.steam.controller;
 
-import com.example.steam.DTO.User;
+import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import com.example.steam.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -48,10 +46,18 @@ public class UserController {
     // 회원가입 엔드포인트
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody User user) {
-        String token = userService.signUp(user); // 회원가입 처리
+        String token = userService.signUp(user, user.getPasswordConfirm());
         Map<String, String> response = new HashMap<>();
         response.put("message", "회원가입 성공");
         response.put("token", token);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/checkUserId")
+    public ResponseEntity<?> checkUserId(@RequestParam("userId") String userId) {
+        boolean isAvailable = userService.checkUserIdAvailable(userId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("isAvailable", isAvailable);
         return ResponseEntity.ok(response);
     }
 
@@ -59,10 +65,16 @@ public class UserController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> userCredentials) {
         logger.info("로그인 시도: 사용자 아이디 = {}", userCredentials.get("username"));
         try {
+            logger.info("인증 시도 전: {}", userCredentials.get("username"));
+
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                     userCredentials.get("username"), userCredentials.get("password"));
 
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+            // 인증 시도 후 로그
+            logger.info("인증 성공: 사용자 아이디 = {}", userCredentials.get("username"));
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();

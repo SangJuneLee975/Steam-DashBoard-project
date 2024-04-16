@@ -39,15 +39,16 @@ public class SecurityConfig {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/user/signup").permitAll();
+                    auth.requestMatchers("/user/signup", "/user/checkUserId").permitAll();
                     auth.requestMatchers("/user/login").permitAll();
                     auth.requestMatchers("/user/**").authenticated();
                     auth.requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER");
                     auth.requestMatchers("/admin/**").hasRole("ADMIN");
                     auth.anyRequest().permitAll();
+
                 })
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-                .formLogin(form -> form.loginPage("/login").permitAll());
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 

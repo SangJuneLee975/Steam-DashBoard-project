@@ -1,6 +1,6 @@
 package com.example.steam.controller;
 
-import com.example.steam.DTO.User;
+import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.OAuthTokens;
 import com.example.steam.model.GoogleUser;

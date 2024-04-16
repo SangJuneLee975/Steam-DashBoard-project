@@ -1,6 +1,7 @@
-package com.example.steam.DTO;
+package com.example.steam.dto;
 
 import com.example.steam.entity.RefreshToken;
+import com.example.steam.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,21 +16,48 @@ import java.util.*;
 @Table(name = "user")
 public class User implements UserDetails {
     @Id
-    private String userId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // 자동 생성 설정
+    private Long id;    //인덱스 값
+
+    @Column(unique = true) // 유니크 제약 조건 추가
+    private String userId; // 사용자 ID
+
     private String password;
     private String name;
     private String nickname;
     private String email;
 
 
-    // UserDetails 구현에 필요한 authorities 필드
-    @Transient // DB에 매핑되지 않는 필드임을 명시
+    @Transient
+    private String passwordConfirm; // 비밀번호 확인
+
+
+    @Transient
     private Collection<? extends GrantedAuthority> authorities;
 
     // UserDetails 인터페이스 구현
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    // user 엔티티와 role 엔티티 간에 다대다 관계(@ManyToMany)를 설정
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
+    // 권한(역할) 추가 메서드
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
+
+    // 권한(역할) 설정 메서드
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 
     @Override

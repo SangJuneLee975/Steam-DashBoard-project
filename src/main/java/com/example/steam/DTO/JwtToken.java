@@ -1,4 +1,4 @@
-package com.example.steam.DTO;
+package com.example.steam.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

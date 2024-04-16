@@ -1,4 +1,4 @@
-package com.example.steam.DTO;
+package com.example.steam.dto;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
