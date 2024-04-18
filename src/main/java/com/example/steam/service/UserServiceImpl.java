@@ -134,7 +134,7 @@ public class UserServiceImpl implements UserService {
             User newUser = User.builder()
                     .email(googleUser.getEmail())
                     .name(googleUser.getName())
-                    // 기타 필요한 정보 설정
+                    .userId(googleUser.getEmail())
                     .build();
             return userRepository.save(newUser);
         }

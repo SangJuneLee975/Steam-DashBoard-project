@@ -6,6 +6,8 @@ import com.example.steam.entity.OAuthTokens;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.service.GoogleOAuthService;
 import com.example.steam.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,7 @@ public class OAuthController {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    private static final Logger logger = LoggerFactory.getLogger(OAuthController.class);
 
     @GetMapping("/google/login")
     public String googleLogin() {
@@ -37,6 +40,7 @@ public class OAuthController {
 
     @GetMapping("/google/callback")
     public ResponseEntity<?> googleCallback(@RequestParam String code) {
+        logger.info("Google OAuth 콜백 처리 시작: code={}", code);
         try {
             OAuthTokens tokens = googleOAuthService.getAccessToken(code);
             GoogleUser googleUser = googleOAuthService.getUserInfo(tokens.getAccessToken());
@@ -51,7 +55,8 @@ public class OAuthController {
             // 토큰 반환
             return ResponseEntity.ok().body(Map.of("accessToken", jwt));
         } catch (IOException e) {
-            // IOException 처리 로직 (예: 로그 남기기, 에러 응답 반환)
+            logger.error("Google OAuth 콜백 처리 중 오류 발생", e);
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google OAuth 처리 중 오류 발생");
         }
     }

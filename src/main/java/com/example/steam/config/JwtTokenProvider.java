@@ -154,6 +154,7 @@ public class JwtTokenProvider {
 
     // 리프레시 토큰 검증 메서드
     public boolean validateRefreshToken(String token) {
+
         return refreshTokenService.validateRefreshToken(token); 
     }
 }

@@ -4,6 +4,8 @@ import com.example.steam.entity.OAuthTokens;
 import com.example.steam.model.GoogleUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +21,8 @@ import java.io.IOException;
 @Service
 public class GoogleOAuthServiceImpl implements GoogleOAuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(GoogleOAuthServiceImpl.class);
+
     @Value("${google.client.id}")
     private String clientId;
 
@@ -29,17 +33,22 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
     private String redirectUri;
 
     public String getGoogleAuthorizationUrl() {
+
+
         String url = "https://accounts.google.com/o/oauth2/v2/auth?client_id=" + clientId +
                 "&redirect_uri=" + redirectUri +
                 "&response_type=code" +
                 "&scope=email profile" +
                 "&access_type=offline";
+
+
         return url;
     }
 
     public OAuthTokens getAccessToken(String code) {
         // 요청을 보낼 URL
         String url = "https://oauth2.googleapis.com/token";
+        logger.info("Google OAuth2 Access Token 요청 시작: code={}", code);
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -63,18 +72,22 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
         String accessToken = root.path("access_token").asText();
         String refreshToken = root.path("refresh_token").asText();
 
-
+            logger.info("Google OAuth2 Access Token 요청 성공: accessToken={}, refreshToken={}", accessToken, refreshToken);
             return new OAuthTokens(accessToken, refreshToken);
         } catch (IOException e) {
+            logger.error("Google OAuth2 Access Token 요청 실패", e);
             throw new RuntimeException("Failed to parse Google OAuth token response", e);
         }
     }
 
     public GoogleUser getUserInfo(String accessToken) {
+
+        logger.info("Google OAuth2 사용자 정보 요청 시작: accessToken={}", accessToken);
         String url = "https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + accessToken;
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<GoogleUser> response = restTemplate.getForEntity(url, GoogleUser.class);
+        logger.info("Google OAuth2 사용자 정보 요청 성공: userInfo={}", response.getBody());
         return response.getBody();
     }
 }
