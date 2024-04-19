@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -39,7 +40,7 @@ public class OAuthController {
     }
 
     @GetMapping("/google/callback")
-    public ResponseEntity<?> googleCallback(@RequestParam String code) {
+    public ResponseEntity<?> googleCallback(@RequestParam("code") String code) {
         logger.info("Google OAuth 콜백 처리 시작: code={}", code);
         try {
             OAuthTokens tokens = googleOAuthService.getAccessToken(code);
@@ -52,8 +53,13 @@ public class OAuthController {
             String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(
                     user.getUsername(), null, Collections.emptyList())).getAccessToken();
 
+            // 프론트엔드로 리다이렉트할 URL 포함
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("accessToken", jwt);
+            responseBody.put("redirectUrl", "https://localhost:3000");
+
             // 토큰 반환
-            return ResponseEntity.ok().body(Map.of("accessToken", jwt));
+            return ResponseEntity.ok().body(responseBody);
         } catch (IOException e) {
             logger.error("Google OAuth 콜백 처리 중 오류 발생", e);
 

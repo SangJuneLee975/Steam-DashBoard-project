@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/user/signup", "/user/checkUserId").permitAll();
                     auth.requestMatchers("/user/login").permitAll();
+                    auth.requestMatchers("/oauth/**").permitAll();
                     auth.requestMatchers("/user/**").authenticated();
                     auth.requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER");
                     auth.requestMatchers("/admin/**").hasRole("ADMIN");
