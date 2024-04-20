@@ -6,8 +6,10 @@ import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
+import com.example.steam.entity.SocialLogin;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.repository.RoleRepository;
+import com.example.steam.repository.SocialLoginRepository;
 import com.example.steam.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final RoleRepository roleRepository;
+    private final SocialLoginRepository socialLoginRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -42,7 +45,7 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider,
-                           CustomUserDetailsService customUserDetailsService,  AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService, RoleRepository roleRepository) {
+                           CustomUserDetailsService customUserDetailsService, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService, RoleRepository roleRepository,SocialLoginRepository socialLoginRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -50,6 +53,7 @@ public class UserServiceImpl implements UserService {
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
         this.roleRepository = roleRepository;
+        this.socialLoginRepository = socialLoginRepository;
     }
 
     @Override
@@ -94,28 +98,28 @@ public class UserServiceImpl implements UserService {
 
         logger.info("로그인 시도: 아이디 = {}", username);
         try {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 리프레시 토큰 생성 및 저장
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(username);
+            // 리프레시 토큰 생성 및 저장
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(username);
 
-        // 액세스 토큰 생성
-        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
-        String accessToken = jwtToken.getAccessToken();
+            // 액세스 토큰 생성
+            JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+            String accessToken = jwtToken.getAccessToken();
 
-        User user = (User) authentication.getPrincipal(); //
-        logger.info("사용자 정보: 아이디 = {}, 닉네임 = {}", user.getUsername(), user.getNickname());
+            User user = (User) authentication.getPrincipal(); //
+            logger.info("사용자 정보: 아이디 = {}, 닉네임 = {}", user.getUsername(), user.getNickname());
 
-        String nickname = user.getNickname(); // User 객체에서 닉네임 가져오기
+            String nickname = user.getNickname(); // User 객체에서 닉네임 가져오기
 
 
-        // 응답에 액세스 토큰과 리프레시 토큰 포함
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put("accessToken", accessToken);
-        tokens.put("refreshToken", refreshToken.getToken());
-        tokens.put("nickname", nickname);
+            // 응답에 액세스 토큰과 리프레시 토큰 포함
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", accessToken);
+            tokens.put("refreshToken", refreshToken.getToken());
+            tokens.put("nickname", nickname);
 
             return tokens;
         } catch (Exception e) {
@@ -125,18 +129,29 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    public User processGoogleUser(GoogleUser googleUser) {
+    public User processGoogleUser(GoogleUser googleUser, String accessToken) {
         Optional<User> existingUser = userRepository.findByEmail(googleUser.getEmail());
-        if (existingUser.isPresent()) {
-            return existingUser.get();
-        } else {
+        User user = existingUser.orElseGet(() -> {
             // 구글 사용자 정보를 기반으로 새 사용자 생성
             User newUser = User.builder()
                     .email(googleUser.getEmail())
                     .name(googleUser.getName())
-                    .userId(googleUser.getEmail())
+                    .userId(googleUser.getEmail()) // 이메일을 userId로 사용
                     .build();
             return userRepository.save(newUser);
-        }
+        });
+
+        // SocialLogin Entity 생성 및 저장 로직 추가
+        SocialLogin socialLogin = socialLoginRepository.findByUserAndSocialCode(user, 1)
+                .orElse(SocialLogin.builder()
+                        .user(user)
+                        .socialCode(1) // 소셜 코드 1 = GOogle
+                        .externalId(googleUser.getId()) // 구글 사용자 고유 ID
+                        .accessToken(accessToken) // 액세스 토큰 저장
+                        .build());
+
+        socialLoginRepository.save(socialLogin);
+
+        return user;
     }
 }

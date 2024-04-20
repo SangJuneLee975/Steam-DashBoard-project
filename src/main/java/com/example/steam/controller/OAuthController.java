@@ -6,6 +6,7 @@ import com.example.steam.entity.OAuthTokens;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.service.GoogleOAuthService;
 import com.example.steam.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,31 +41,23 @@ public class OAuthController {
     }
 
     @GetMapping("/google/callback")
-    public ResponseEntity<?> googleCallback(@RequestParam("code") String code) {
+    public void googleCallback(@RequestParam("code") String code, HttpServletResponse response) {
         logger.info("Google OAuth 콜백 처리 시작: code={}", code);
         try {
             OAuthTokens tokens = googleOAuthService.getAccessToken(code);
             GoogleUser googleUser = googleOAuthService.getUserInfo(tokens.getAccessToken());
 
-            // GoogleUser 정보를 기반으로 회원가입 또는 로그인 처리
-            User user = userService.processGoogleUser(googleUser);
-
-            // 사용자 인증 정보를 기반으로 JWT 토큰 생성
-            String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(
-                    user.getUsername(), null, Collections.emptyList())).getAccessToken();
-
-            // 프론트엔드로 리다이렉트할 URL 포함
-            Map<String, Object> responseBody = new HashMap<>();
-            responseBody.put("accessToken", jwt);
-            responseBody.put("redirectUrl", "https://localhost:3000");
-
-            // 토큰 반환
-            return ResponseEntity.ok().body(responseBody);
-        } catch (IOException e) {
+            User user = userService.processGoogleUser(googleUser, tokens.getAccessToken());
+            String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(user.getUsername(), null, Collections.emptyList())).getAccessToken();
+            String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
+            response.sendRedirect(redirectUrlWithToken);
+        } catch (Exception e) {
             logger.error("Google OAuth 콜백 처리 중 오류 발생", e);
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google OAuth 처리 중 오류 발생");
+            try {
+                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Google OAuth 처리 중 오류 발생");
+            } catch (IOException ioException) {
+                logger.error("리다이렉트 실패", ioException);
+            }
         }
     }
-
 }

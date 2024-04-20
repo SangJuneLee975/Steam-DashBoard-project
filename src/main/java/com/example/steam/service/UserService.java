@@ -10,7 +10,7 @@ public interface UserService {
    public String signUp(User user, String passwordConfirm) ;
    public Map<String, String> login(String username, String password);
 
-   User processGoogleUser(GoogleUser googleUser);
+   User processGoogleUser(GoogleUser googleUser, String accessToken);
 
    boolean checkUserIdAvailable(String userId); // 중복 아이디 체크
 }
