@@ -4,7 +4,9 @@ import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.OAuthTokens;
 import com.example.steam.model.GoogleUser;
+import com.example.steam.model.NaverUser;
 import com.example.steam.service.GoogleOAuthService;
+import com.example.steam.service.NaverOAuthService;
 import com.example.steam.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -26,6 +28,9 @@ public class OAuthController {
 
     @Autowired
     private GoogleOAuthService googleOAuthService;
+
+    @Autowired
+    private NaverOAuthService naverOAuthService;
 
     @Autowired
     private UserService userService;
@@ -60,4 +65,25 @@ public class OAuthController {
             }
         }
     }
+
+    @GetMapping("/naver/login")
+    public String naverLogin() {
+        return naverOAuthService.getNaverAuthorizationUrl();
+    }
+
+    @GetMapping("/naver/callback")
+    public void naverCallback(@RequestParam("code") String code, HttpServletResponse response) {
+        try {
+            OAuthTokens tokens = naverOAuthService.getAccessToken(code);
+            NaverUser naverUser = naverOAuthService.getUserInfo(tokens.getAccessToken());
+
+            User user = userService.processNaverUser(naverUser, tokens.getAccessToken());
+            String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(user.getUsername(), null, Collections.emptyList())).getAccessToken();
+            String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
+            response.sendRedirect(redirectUrlWithToken);
+        } catch (Exception e) {
+
+        }
+    }
+
 }

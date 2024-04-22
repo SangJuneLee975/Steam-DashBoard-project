@@ -1,6 +1,7 @@
 // UserServiceImpl.java
 package com.example.steam.service;
 
+import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.JwtToken;
 import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
@@ -8,6 +9,7 @@ import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
 import com.example.steam.entity.SocialLogin;
 import com.example.steam.model.GoogleUser;
+import com.example.steam.model.NaverUser;
 import com.example.steam.repository.RoleRepository;
 import com.example.steam.repository.SocialLoginRepository;
 import com.example.steam.repository.UserRepository;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +48,7 @@ public class UserServiceImpl implements UserService {
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider,
-                           CustomUserDetailsService customUserDetailsService, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService, RoleRepository roleRepository,SocialLoginRepository socialLoginRepository) {
+                           CustomUserDetailsService customUserDetailsService, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService, RoleRepository roleRepository, SocialLoginRepository socialLoginRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -138,20 +141,49 @@ public class UserServiceImpl implements UserService {
                     .name(googleUser.getName())
                     .userId(googleUser.getEmail()) // 이메일을 userId로 사용
                     .build();
+            // 권한 설정 로직
+            Role userRole = roleRepository.findByName("ROLE_USER")
+                    .orElseGet(() -> roleRepository.save(new Role("ROLE_USER"))); // ROLE_USER가 없다면 생성하여 저장
+            newUser.addRole(userRole); // 생성된 사용자에 ROLE_USER 권한 부여
             return userRepository.save(newUser);
         });
 
-        // SocialLogin Entity 생성 및 저장 로직 추가
-        SocialLogin socialLogin = socialLoginRepository.findByUserAndSocialCode(user, 1)
-                .orElse(SocialLogin.builder()
-                        .user(user)
-                        .socialCode(1) // 소셜 코드 1 = GOogle
-                        .externalId(googleUser.getId()) // 구글 사용자 고유 ID
-                        .accessToken(accessToken) // 액세스 토큰 저장
-                        .build());
 
+        // SocialLogin Entity 생성 및 저장 로직 추가
+        SocialLogin socialLogin = socialLoginRepository.findByUserAndSocialCode(user, 1) // 소셜 코드 1 = Google
+                .orElseGet(() -> {
+                    SocialLogin newSocialLogin = SocialLogin.builder()
+                            .user(user)
+                            .socialCode(1) // 소셜 코드 1 = Google
+                            .externalId(googleUser.getId()) // 구글 사용자 고유 ID
+                            .accessToken(accessToken) // 액세스 토큰 저장
+                            .build();
+                    return socialLoginRepository.save(newSocialLogin);
+                });
+
+        // 리프레시 토큰 생성 및 저장
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
+
+        // UserDetails 생성 및 SecurityContext에 저장
+        UserDetails userDetails = new CustomUserDetails(user, AuthorityUtils.createAuthorityList("ROLE_USER"));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // JWT 토큰 발급
+        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+
+        // 소셜 로그인 정보 업데이트
+        socialLogin.setAccessToken(jwtToken.getAccessToken()); // Access Token 저장
         socialLoginRepository.save(socialLogin);
+
 
         return user;
     }
+
+    @Override
+    public User processNaverUser(NaverUser naverUser, String accessToken) {
+        return null;
+    }
+
+
 }

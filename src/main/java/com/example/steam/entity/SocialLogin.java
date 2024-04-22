@@ -35,7 +35,11 @@ public class SocialLogin {
         this.externalId = externalId;
         this.accessToken = accessToken;
         this.updateDate = updateDate;
+
     }
 
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
 
 }
