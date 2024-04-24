@@ -72,9 +72,9 @@ public class OAuthController {
     }
 
     @GetMapping("/naver/callback")
-    public void naverCallback(@RequestParam("code") String code, HttpServletResponse response) {
+    public void naverCallback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletResponse response) {
         try {
-            OAuthTokens tokens = naverOAuthService.getAccessToken(code);
+            OAuthTokens tokens = naverOAuthService.getAccessToken(code, state);  // state 값 전달
             NaverUser naverUser = naverOAuthService.getUserInfo(tokens.getAccessToken());
 
             User user = userService.processNaverUser(naverUser, tokens.getAccessToken());
@@ -82,8 +82,12 @@ public class OAuthController {
             String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
             response.sendRedirect(redirectUrlWithToken);
         } catch (Exception e) {
-
+            logger.error("Naver OAuth 콜백 처리 중 오류 발생", e);
+            try {
+                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Naver OAuth 처리 중 오류 발생");
+            } catch (IOException ioException) {
+                logger.error("리다이렉트 실패", ioException);
+            }
         }
     }
-
 }
