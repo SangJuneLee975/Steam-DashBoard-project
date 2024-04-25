@@ -47,7 +47,7 @@ public class NaverOAuthServiceImpl implements NaverOAuthService {
         params.add("client_secret", clientSecret);
         params.add("grant_type", "authorization_code");
         params.add("code", code);
-        params.add("state", state); 
+        params.add("state", state);
         params.add("redirect_uri", redirectUri);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);

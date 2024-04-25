@@ -20,10 +20,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -181,9 +183,53 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public User processNaverUser(NaverUser naverUser, String accessToken) {
-        return null;
+        // 기존 사용자를 검색
+        try {
+            User user = userRepository.findByEmail(naverUser.getEmail())
+                    .orElseGet(() -> {
+                        // 네이버 사용자 정보로 새 User 엔티티 생성
+                        User newUser = User.builder()
+                                .userId(naverUser.getEmail()) // email를 userId로 사용
+                                .email(naverUser.getEmail())
+                                .name(naverUser.getName())
+                                .build();
+                        // 기본 ROLE_USER 권한 부여
+                        Role roleUser = roleRepository.findByName("ROLE_USER")
+                                .orElse(roleRepository.save(new Role("ROLE_USER")));
+
+                        newUser.addRole(roleUser);
+                        return userRepository.save(newUser); // 새 사용자 저장
+                    });
+
+            // SocialLogin 엔티티 조회 또는 생성
+            SocialLogin socialLogin = socialLoginRepository.findByUserAndSocialCode(user, 2) // 소셜 코드 2 = Naver
+                    .orElseGet(() -> {
+                        SocialLogin newSocialLogin = SocialLogin.builder()
+                                .user(user)
+                                .socialCode(2) // 소셜 코드 2 = Naver
+                                .externalId(naverUser.getId()) // 네이버 고유 ID
+                                .accessToken(accessToken)
+                                .build();
+                        return socialLoginRepository.save(newSocialLogin); // 소셜 로그인 정보 저장
+                    });
+
+            // 액세스 토큰 업데이트
+            socialLogin.setAccessToken(accessToken);
+            socialLoginRepository.save(socialLogin);
+
+            // UserDetails 생성 및 인증 처리
+            UserDetails userDetails = new CustomUserDetails(user, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // JWT 토큰 발급 및 반환
+            JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+            return user;
+        } catch (Exception e) {
+            logger.error("Naver OAuth 처리 중 오류 발생", e);
+            throw new RuntimeException("Naver OAuth 처리 중 오류 발생", e);
+        }
     }
-
-
 }

@@ -74,7 +74,7 @@ public class OAuthController {
     @GetMapping("/naver/callback")
     public void naverCallback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletResponse response) {
         try {
-            OAuthTokens tokens = naverOAuthService.getAccessToken(code, state);  // state 값 전달
+            OAuthTokens tokens = naverOAuthService.getAccessToken(code, state);
             NaverUser naverUser = naverOAuthService.getUserInfo(tokens.getAccessToken());
 
             User user = userService.processNaverUser(naverUser, tokens.getAccessToken());

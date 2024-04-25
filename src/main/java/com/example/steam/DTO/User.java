@@ -3,6 +3,7 @@ package com.example.steam.dto;
 import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.Order;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -49,6 +50,7 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
 
     // 권한(역할) 추가 메서드
     public void addRole(Role role) {
