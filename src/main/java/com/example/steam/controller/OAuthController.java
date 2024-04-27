@@ -3,11 +3,10 @@ package com.example.steam.controller;
 import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.OAuthTokens;
+import com.example.steam.entity.RefreshToken;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.model.NaverUser;
-import com.example.steam.service.GoogleOAuthService;
-import com.example.steam.service.NaverOAuthService;
-import com.example.steam.service.UserService;
+import com.example.steam.service.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,13 @@ public class OAuthController {
     private UserService userService;
 
     @Autowired
+    private NaverUserService naverUserService;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     private static final Logger logger = LoggerFactory.getLogger(OAuthController.class);
 
@@ -77,8 +82,13 @@ public class OAuthController {
             OAuthTokens tokens = naverOAuthService.getAccessToken(code, state);
             NaverUser naverUser = naverOAuthService.getUserInfo(tokens.getAccessToken());
 
-            User user = userService.processNaverUser(naverUser, tokens.getAccessToken());
+            User user = naverUserService.processNaverUser(naverUser, tokens.getAccessToken());
+
+
+            // JWT 토큰 생성
             String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(user.getUsername(), null, Collections.emptyList())).getAccessToken();
+
+            // 클라이언트에 전달할 토큰 정보
             String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
             response.sendRedirect(redirectUrlWithToken);
         } catch (Exception e) {

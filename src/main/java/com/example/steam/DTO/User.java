@@ -2,6 +2,7 @@ package com.example.steam.dto;
 
 import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
+import com.example.steam.entity.SocialLogin;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.Order;
 import lombok.*;
@@ -13,6 +14,7 @@ import java.util.*;
 
 @Getter
 @Entity
+@Data
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user")
 public class User implements UserDetails {
@@ -40,6 +42,21 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+
+    // User와 SocialLogin 간의 1:N 관계
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<SocialLogin> socialLogins = new HashSet<>();
+
+    public void addSocialLogin(SocialLogin socialLogin) {
+        socialLogins.add(socialLogin);
+        socialLogin.setUser(this);
+    }
+
+    public void removeSocialLogin(SocialLogin socialLogin) {
+        socialLogins.remove(socialLogin);
+        socialLogin.setUser(null);
     }
 
     // user 엔티티와 role 엔티티 간에 다대다 관계(@ManyToMany)를 설정

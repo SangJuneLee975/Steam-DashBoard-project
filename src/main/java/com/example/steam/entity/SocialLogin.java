@@ -14,11 +14,11 @@ public class SocialLogin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long socialLoginId;
+    private Long id;
 
     // 이 필드는 매핑된 User 엔티티의 참조를 직접 저장합니다.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_no") // 외래키 컬럼명을 지정
+    @JoinColumn(name = "user_id")
     private User user;
 
     private Integer socialCode; // 소셜 로그인 제공자 구분 코드
@@ -42,4 +42,10 @@ public class SocialLogin {
         this.accessToken = accessToken;
     }
 
+    public void setUser(User user) {
+        this.user = user;
+        if (!user.getSocialLogins().contains(this)) {
+            user.getSocialLogins().add(this);
+        }
+    }
 }
