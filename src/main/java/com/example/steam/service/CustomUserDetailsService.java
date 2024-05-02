@@ -1,5 +1,6 @@
 package com.example.steam.service;
 
+import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
 import com.example.steam.entity.Role;
 import com.example.steam.repository.UserRepository;
@@ -31,9 +32,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByUserId(username)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
 
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-                true, true, true, true,
-                AuthorityUtils.createAuthorityList("ROLE_USER"));
+        return new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                user.getName(),
+                mapRolesToAuthorities(user.getRoles())  // 권한 설정
+        );
     }
     private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles) {
         return roles.stream()

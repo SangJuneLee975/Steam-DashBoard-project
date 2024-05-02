@@ -1,5 +1,6 @@
 package com.example.steam.controller;
 
+import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -71,17 +73,18 @@ public class UserController {
                     userCredentials.get("username"), userCredentials.get("password"));
 
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
-
-            // 인증 시도 후 로그
-            logger.info("인증 성공: 사용자 아이디 = {}", userCredentials.get("username"));
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // 사용자 정보 가져오기
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername(); // 사용자 ID
+            String name = userDetails.getName(); // 사용자 이름
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();
             String refreshToken = refreshTokenService.createRefreshToken(userCredentials.get("username")).getToken();
 
-            // 로그인 성공 로그
-            logger.info("로그인 성공: 사용자 아이디 = {}", userCredentials.get("username"));
+
 
             Map<String, String> response = new HashMap<>();
             response.put("message", "로그인 성공");
@@ -96,6 +99,14 @@ public class UserController {
         }
     }
 
+    // 사용자 정보를 반환하는 API
+    @GetMapping("/profile")
+    public ResponseEntity<User> getProfile(Authentication authentication) {
+        String userId = authentication.getName();
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with userId: " + userId));
+        return ResponseEntity.ok(user);
+    }
 
 
     @PostMapping("/refresh")

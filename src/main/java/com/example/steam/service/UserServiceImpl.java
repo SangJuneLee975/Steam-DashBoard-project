@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,10 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -118,13 +116,14 @@ public class UserServiceImpl implements UserService {
             logger.info("사용자 정보: 아이디 = {}, 닉네임 = {}", user.getUsername(), user.getNickname());
 
             String nickname = user.getNickname(); // User 객체에서 닉네임 가져오기
-
+            String name = user.getName();
 
             // 응답에 액세스 토큰과 리프레시 토큰 포함
             Map<String, String> tokens = new HashMap<>();
             tokens.put("accessToken", accessToken);
             tokens.put("refreshToken", refreshToken.getToken());
             tokens.put("nickname", nickname);
+
 
             return tokens;
         } catch (Exception e) {
@@ -169,7 +168,14 @@ public class UserServiceImpl implements UserService {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
 
         // UserDetails 생성 및 SecurityContext에 저장
-        UserDetails userDetails = new CustomUserDetails(user, AuthorityUtils.createAuthorityList("ROLE_USER"));
+        Collection<? extends GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+        UserDetails userDetails = new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                user.getName(),
+                authorities
+        );
+
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 

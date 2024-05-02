@@ -2,6 +2,7 @@ package com.example.steam.config;
 
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.JwtToken;
+import com.example.steam.dto.User;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import io.jsonwebtoken.*;
@@ -48,13 +49,21 @@ public class JwtTokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+    //    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+    //    String username = userDetails.getUsername();
+   //     String name = userDetails.getName();
+
+
         long now = (new Date()).getTime();
+
 
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + 86400000);
+
         String accessToken = Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim("auth", authorities)
+         //       .claim("name", name)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
@@ -81,6 +90,10 @@ public class JwtTokenProvider {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
 
+        String userId = claims.getSubject();
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + userId));
+
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
                 .map(SimpleGrantedAuthority::new)
@@ -88,9 +101,12 @@ public class JwtTokenProvider {
 
         // UserDetails 객체를 만들어서 Authentication return
         // UserDetails: interface, User: UserDetails를 구현한 class
-        UserDetails userDetails = userRepository.findByUserId(claims.getSubject())
-                .map(user -> new CustomUserDetails(user, authorities))
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + claims.getSubject()));
+        CustomUserDetails userDetails = new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                user.getName(),
+                authorities
+        );
 
         return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
     }
