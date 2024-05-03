@@ -1,5 +1,8 @@
 package com.example.steam.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -43,6 +46,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/user/login").permitAll();
                     auth.requestMatchers("/oauth/**").permitAll();
                     auth.requestMatchers("/user/**").authenticated();
+                    auth.requestMatchers("/user/profile").authenticated();
                     auth.requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER");
                     auth.requestMatchers("/admin/**").hasRole("ADMIN");
                     auth.anyRequest().permitAll();

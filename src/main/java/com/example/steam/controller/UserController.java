@@ -6,6 +6,8 @@ import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import com.example.steam.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+
 @RestController
 @RequestMapping("/user")
 @CrossOrigin(origins = "http://localhost:3000")
@@ -32,27 +35,41 @@ public class UserController {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 
     @Autowired
-    public UserController(UserService userService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService,UserRepository userRepository) {
+    public UserController(UserService userService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService,UserRepository userRepository,ObjectMapper objectMapper) {
         this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
+
 
     // 회원가입 엔드포인트
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody User user) {
-        String token = userService.signUp(user, user.getPasswordConfirm());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "회원가입 성공");
-        response.put("token", token);
-        return ResponseEntity.ok(response);
+        try {
+            // 여기서 user 객체는 클라이언트에서 보낸 JSON이 User 클래스로 변환되어 입력됩니다.
+            // 사용자 등록 로직 실행
+            String token = userService.signUp(user, user.getPasswordConfirm());
+
+            // 응답 생성
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "회원가입 성공");
+            response.put("token", token);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // 에러 처리 로직
+            logger.error("Signup failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원가입 실패");
+        }
     }
 
     @GetMapping("/checkUserId")
@@ -101,13 +118,25 @@ public class UserController {
 
     // 사용자 정보를 반환하는 API
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile(Authentication authentication) {
-        String userId = authentication.getName();
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with userId: " + userId));
-        return ResponseEntity.ok(user);
-    }
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            User user = userRepository.findByUserId(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userDetails.getUsername()));
+            String jsonResponse = objectMapper.writeValueAsString(user);
+            return ResponseEntity.ok().body(jsonResponse);
+        } catch (JsonProcessingException e) {
+            logger.error("JSON writing error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing JSON");
+        } catch (Exception e) {
+            logger.error("Error retrieving user profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestParam String refreshToken) {

@@ -1,6 +1,8 @@
 package com.example.steam.entity;
 
 import com.example.steam.dto.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -27,5 +29,6 @@ public class RefreshToken {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "userId")
+    @JsonBackReference //직렬화가 되지 않도록 수행
     private User user;
 }

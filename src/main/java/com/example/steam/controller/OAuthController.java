@@ -1,5 +1,6 @@
 package com.example.steam.controller;
 
+import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.OAuthTokens;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -58,7 +60,23 @@ public class OAuthController {
             GoogleUser googleUser = googleOAuthService.getUserInfo(tokens.getAccessToken());
 
             User user = userService.processGoogleUser(googleUser, tokens.getAccessToken());
-            String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(user.getUsername(), null, Collections.emptyList())).getAccessToken();
+
+
+            CustomUserDetails userDetails = new CustomUserDetails(
+                    user.getUsername(),
+                    user.getPassword(),
+                    user.getName(),
+                    user.getAuthorities()
+            );
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails, // Principal as CustomUserDetails
+                    null,        // Credentials
+                    userDetails.getAuthorities()  // Authorities
+            );
+
+            String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();
+
             String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
             response.sendRedirect(redirectUrlWithToken);
         } catch (Exception e) {
@@ -84,9 +102,20 @@ public class OAuthController {
 
             User user = naverUserService.processNaverUser(naverUser, tokens.getAccessToken());
 
+            CustomUserDetails userDetails = new CustomUserDetails(
+                    user.getUsername(),
+                    user.getPassword(),
+                    user.getName(),
+                    user.getAuthorities()
+            );
 
-            // JWT 토큰 생성
-            String jwt = jwtTokenProvider.generateToken(new UsernamePasswordAuthenticationToken(user.getUsername(), null, Collections.emptyList())).getAccessToken();
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails, // Principal as CustomUserDetails
+                    null,        // Credentials
+                    userDetails.getAuthorities()  // Authorities
+            );
+
+            String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();
 
             // 클라이언트에 전달할 토큰 정보
             String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;

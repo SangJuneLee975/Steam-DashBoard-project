@@ -2,39 +2,58 @@ package com.example.steam.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class JsonUtil {
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static String listToJson(List<String> list) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(list);
-    }
-
-    public static List<String> jsonToList(String json) throws IOException {
-        return objectMapper.readValue(json, new TypeReference<List<String>>(){});
-    }
-
-
-    // 이미지 URL 리스트를 JSON 문자열로 변환하는 메서드 - 이미 정의된 listToJson 활용
-    public static String convertListToJson(List<String> imageUrls) {
+    // Java Object를 JSON 문자열로 변환
+    public static String convertToJson(Object obj) {
         try {
-            // 이미 JSON 문자열이면 변환 없이 그대로 반환
-            new ObjectMapper().readTree(imageUrls.get(0));
-            return imageUrls.get(0);
-        } catch (IOException e) {
-            // JSON이 아니라면, 리스트를 JSON으로 변환합니다.
-            try {
-                return listToJson(imageUrls);
-            } catch (JsonProcessingException jsonProcessingException) {
-                throw new RuntimeException("JSON 변환 중 오류 발생", jsonProcessingException);
-            }
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JSON 변환 실패", e);
         }
     }
 
+    // Java Object를 JSON 파일로 저장
+    public static void writeJsonToFile(Object obj, String filePath) {
+        try {
+            objectMapper.writeValue(new File(filePath), obj);
+        } catch (IOException e) {
+            throw new RuntimeException("파일 쓰기 실패", e);
+        }
+    }
 
+    // Map을 JSON 문자열로 변환
+    public static String convertMapToJson(Map<String, Object> map) {
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Map JSON 변환 실패", e);
+        }
+    }
+
+    // List를 JSON 문자열로 변환
+    public static String convertListToJson(List<?> list) {
+        try {
+            return objectMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("List JSON 변환 실패", e);
+        }
+    }
+
+    // 배열을 JSON 문자열로 변환
+    public static String convertArrayToJson(Object[] array) {
+        try {
+            return objectMapper.writeValueAsString(array);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("배열 JSON 변환 실패", e);
+        }
+    }
 }
-
 

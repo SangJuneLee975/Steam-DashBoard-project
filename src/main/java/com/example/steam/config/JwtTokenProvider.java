@@ -20,6 +20,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,26 +47,30 @@ public class JwtTokenProvider {
 
     // 사용자 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
     public JwtToken generateToken(Authentication authentication) {
+
+
         // 권한 가져오기
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
-    //    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-    //    String username = userDetails.getUsername();
-   //     String name = userDetails.getName();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String username = userDetails.getUsername();
 
+        String encodedName = URLEncoder.encode(userDetails.getName(), StandardCharsets.UTF_8); // 이름 인코딩
 
-        long now = (new Date()).getTime();
-
-
+        long now = System.currentTimeMillis();
         // Access Token 생성
-        Date accessTokenExpiresIn = new Date(now + 86400000);
+        Date accessTokenExpiresIn = new Date(now + 86400000);  // 1 day
+
+
 
         String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())
-                .claim("auth", authorities)
-         //       .claim("name", name)
+                .setSubject(username)
+                .claim("auth", authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.joining(",")))
+                .claim("name", encodedName)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
@@ -74,11 +81,13 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        return JwtToken.builder()
-                .grantType("Bearer")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+        return new JwtToken("Bearer", accessToken, refreshToken);
+
+//        return JwtToken.builder()
+//                .grantType("Bearer")
+//                .accessToken(accessToken)
+//                .refreshToken(refreshToken)
+//                .build();
     }
 
     // Jwt 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 메서드
@@ -93,6 +102,8 @@ public class JwtTokenProvider {
         String userId = claims.getSubject();
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + userId));
+        String decodedName = URLDecoder.decode(claims.get("name", String.class), StandardCharsets.UTF_8);
+
 
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))

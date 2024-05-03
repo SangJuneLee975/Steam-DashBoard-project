@@ -3,6 +3,7 @@ package com.example.steam.dto;
 import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
 import com.example.steam.entity.SocialLogin;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.Order;
 import lombok.*;
@@ -97,7 +98,7 @@ public class User implements UserDetails {
 
     // Builder 패턴 적용
     @Builder
-    public User(String userId, String password, String name, String nickname, String email, Object o) {
+    public User(String userId, String password, String name, String nickname, String email) {
         this.userId = userId;
         this.password = password;
         this.name = name;
@@ -107,6 +108,7 @@ public class User implements UserDetails {
     }
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // 정상적으로 직렬화 수행
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
     public void setPassword(String password) {
