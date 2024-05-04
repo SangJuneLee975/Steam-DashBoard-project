@@ -1,6 +1,7 @@
 package com.example.steam.entity;
 
 import com.example.steam.dto.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class SocialLogin {
     // 이 필드는 매핑된 User 엔티티의 참조를 직접 저장합니다.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonBackReference
     private User user;
 
     private Integer socialCode; // 소셜 로그인 제공자 구분 코드

@@ -20,7 +20,7 @@ public class JsonUtil {
         }
     }
 
-    // Java Object를 JSON 파일로 저장
+   //  Java Object를 JSON 파일로 저장
     public static void writeJsonToFile(Object obj, String filePath) {
         try {
             objectMapper.writeValue(new File(filePath), obj);

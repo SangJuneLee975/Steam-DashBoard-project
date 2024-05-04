@@ -3,9 +3,9 @@ package com.example.steam.dto;
 import com.example.steam.entity.RefreshToken;
 import com.example.steam.entity.Role;
 import com.example.steam.entity.SocialLogin;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import jakarta.persistence.criteria.Order;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -47,6 +47,7 @@ public class User implements UserDetails {
 
     // User와 SocialLogin 간의 1:N 관계
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private Set<SocialLogin> socialLogins = new HashSet<>();
 
     public void addSocialLogin(SocialLogin socialLogin) {
