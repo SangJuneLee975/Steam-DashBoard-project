@@ -1,7 +1,7 @@
 # Steam-statistics-project
 
 
-기간 : 2024-04-08 ~ 2024-04-08
+기간 : 2024-04-08 ~ 
 # todo-list
 - OpenId를 이용한 Steam 계정 연동
 # bug
