@@ -16,4 +16,6 @@ public interface UserService {
   // User processNaverUser(NaverUser naverUser, String accessToken);
 
    boolean checkUserIdAvailable(String userId); // 중복 아이디 체크
+
+
 }
