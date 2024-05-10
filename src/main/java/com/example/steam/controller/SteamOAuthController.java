@@ -18,8 +18,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RestController
+
 @RequestMapping("/oauth/steam")
+@RestController
 public class SteamOAuthController {
     private static final Logger logger = LoggerFactory.getLogger(SteamOAuthController.class);
 
@@ -61,21 +62,27 @@ public class SteamOAuthController {
         }
     }
 
-    @PostMapping("/callback")
-    public ResponseEntity<?> handleSteamCallback(@RequestParam("steamId") String steamId, HttpServletRequest request) {
+    @GetMapping("/callback")
+    public ResponseEntity<?> handleSteamCallback(@RequestParam("openid.assoc_handle") String assocHandle,
+                                                 @RequestParam("openid.claimed_id") String claimedId,
+                                                 @RequestParam("openid.sig") String signature) {
         try {
-            steamAuthService.processSteamUser(steamId, "DisplayName from Steam");  //  스팀이름 나중에 가져오기
+            // 스팀 사용자 처리 로직
+            steamAuthService.processSteamUser(claimedId, "DisplayName from Steam"); // 스팀 사용자 정보 처리
 
+            // 인증 객체 확인
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("스팀 인증 실패");
             }
 
+            // JWT 토큰 생성
             String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
-            return ResponseEntity.ok(Map.of("accessToken", token));
+            return ResponseEntity.ok(Map.of("accessToken", token, "claimedId", claimedId, "assocHandle", assocHandle));
+
         } catch (Exception e) {
-            logger.error("Steam 인증 실패d", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Steam 인증 실패");
+            logger.error("스팀 인증 실패d", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("스팀 인증 실패");
         }
     }
 }
