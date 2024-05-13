@@ -19,5 +19,7 @@ public class GoogleUser {
     private String picture;
     private String locale;
 
+    private String nickname;
+
 
 }

@@ -24,6 +24,7 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,7 @@ public class UserServiceImpl implements UserService {
         return jwtToken.getAccessToken();
     }
 
+
     @Override
     public boolean checkUserIdAvailable(String userId) {
         Optional<User> userOptional = userRepository.findByUserId(userId);
@@ -132,22 +134,82 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    public User updateUserProfile(String username, Map<String, String> updates) {
+        User user = userRepository.findByUserId(username)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
+
+        Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+
+        // 로컬 사용자만 이메일 변경 가능
+
+        if (socialLoginOpt.isPresent()) {
+            String newNickname = updates.get("nickname");
+            String newName = updates.get("name");
+
+            if (newNickname != null && !newNickname.isEmpty()) {
+                user.setNickname(newNickname);
+            }
+            if (newName != null && !newName.isEmpty()) {
+                user.setName(newName);
+            }
+        } else {
+            String newEmail = updates.get("email");
+            if (newEmail != null && !newEmail.isEmpty()) {
+                user.setEmail(newEmail);
+            }
+            String newNickname = updates.get("nickname");
+            String newName = updates.get("name");
+
+            if (newNickname != null && !newNickname.isEmpty()) {
+                user.setNickname(newNickname);
+            }
+            if (newName != null && !newName.isEmpty()) {
+                user.setName(newName);
+            }
+        }
+
+
+        String newNickname = updates.get("nickname");
+        String newName = updates.get("name");
+      //  String newEmail = updates.get("email");
+
+        // 닉네임, 이름, 이메일 업데이트 로직 추가
+        if (newNickname != null && !newNickname.isEmpty()) {
+            user.setNickname(newNickname);
+        }
+        if (newName != null && !newName.isEmpty()) {
+            user.setName(newName);
+        }
+
+
+        return userRepository.save(user);
+    }
 
     @Override
     @Transactional
     public User processGoogleUser(GoogleUser googleUser, String accessToken) {
         Optional<User> existingUser = userRepository.findByEmail(googleUser.getEmail());
         User user = existingUser.orElseGet(() -> {
+
+            // Google 사용자의 기본 닉네임 생성
+            String nickname = "GoogleUser" + new Random().nextInt(10000);
+
+
             // 구글 사용자 정보를 기반으로 새 사용자 생성
             User newUser = User.builder()
                     .email(googleUser.getEmail())
+
                     .name(googleUser.getName())
+
+                    .nickname(nickname) // 생성한 닉네임 설정
                     .userId(googleUser.getEmail()) // 이메일을 userId로 사용
+                    .isSocial(true)
                     .build();
             // 권한 설정 로직
             Role userRole = roleRepository.findByName("ROLE_USER")
                     .orElseGet(() -> roleRepository.save(new Role("ROLE_USER"))); // ROLE_USER가 없다면 생성하여 저장
             newUser.addRole(userRole); // 생성된 사용자에 ROLE_USER 권한 부여
+
             return userRepository.save(newUser);
         });
 

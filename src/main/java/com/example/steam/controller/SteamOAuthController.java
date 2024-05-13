@@ -68,7 +68,7 @@ public class SteamOAuthController {
                                                  @RequestParam("openid.sig") String signature) {
         try {
             // 스팀 사용자 처리 로직
-            steamAuthService.processSteamUser(claimedId, "DisplayName from Steam"); // 스팀 사용자 정보 처리
+            steamAuthService.processSteamUser(claimedId, "SteamUser"); // 스팀 사용자 정보 처리. 스팀에서 정보가져오는거 처리 필요함
 
             // 인증 객체 확인
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

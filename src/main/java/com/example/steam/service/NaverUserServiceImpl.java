@@ -66,6 +66,7 @@ public class NaverUserServiceImpl implements NaverUserService {
                       .name(naverUser.getName())
                       .userId(naverUser.getEmail()) // 이메일을 userId로 사용
                       .nickname(naverUser.getNickname())
+                      .isSocial(true)
                       .build();
 
                     // 기본 권한 설정

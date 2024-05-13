@@ -17,5 +17,5 @@ public interface UserService {
 
    boolean checkUserIdAvailable(String userId); // 중복 아이디 체크
 
-
+   public User updateUserProfile(String username, Map<String, String> updates);
 }

@@ -138,6 +138,24 @@ public class UserController {
         }
     }
 
+    @PutMapping("/updateProfile")
+    public ResponseEntity<?> updateProfile(Authentication authentication, @RequestBody Map<String, String> updates) {
+        try {
+            if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            User user = userService.updateUserProfile(userDetails.getUsername(), updates);
+
+            return ResponseEntity.ok().body(user);
+        } catch (Exception e) {
+            logger.error("프로필 업데이트 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("프로필 업데이트 중 오류 발생");
+        }
+    }
+
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(@RequestParam String refreshToken) {
         if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {

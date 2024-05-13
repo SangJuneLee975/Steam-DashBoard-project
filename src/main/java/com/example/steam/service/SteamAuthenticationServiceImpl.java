@@ -73,7 +73,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
         User user = userRepository.findByUserId(steamId)
                 .orElseGet(() -> {
-                    User newUser = new User(steamId, null, displayName, null, null);
+                    User newUser = new User(steamId, null, displayName, null, null, true);
                     userRepository.save(newUser);
                     return newUser;
                 });

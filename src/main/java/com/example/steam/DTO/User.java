@@ -27,13 +27,32 @@ public class User implements UserDetails {
 
     private String password;
     private String name;
+    @Column(nullable = true)
     private String nickname;
     private String email;
 
+    @Transient
+    private boolean isSocial; // 소셜 로그인 사용자인지 구분
 
     @Transient
     private String passwordConfirm; // 비밀번호 확인
+    public void setNickname(String nickname) {
+        this.nickname = nickname;  // 닉네임 설정
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+
+
+    public void setSocial(boolean isSocial) {
+        this.isSocial = isSocial;
+    }
 
     @Transient
     private Collection<? extends GrantedAuthority> authorities;
@@ -99,12 +118,14 @@ public class User implements UserDetails {
 
     // Builder 패턴 적용
     @Builder
-    public User(String userId, String password, String name, String nickname, String email) {
+    public User(String userId, String password, String name, String nickname, String email, boolean isSocial) {
         this.userId = userId;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.email = email;
+        this.isSocial = isSocial;
+
 
     }
 
