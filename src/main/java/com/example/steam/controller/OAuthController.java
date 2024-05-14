@@ -5,8 +5,10 @@ import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.entity.OAuthTokens;
 import com.example.steam.entity.RefreshToken;
+import com.example.steam.entity.SocialLogin;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.model.NaverUser;
+import com.example.steam.repository.SocialLoginRepository;
 import com.example.steam.service.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/oauth")
@@ -35,6 +38,9 @@ public class OAuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SocialLoginRepository socialLoginRepository;
 
     @Autowired
     private NaverUserService naverUserService;
@@ -66,6 +72,7 @@ public class OAuthController {
                     user.getUsername(),
                     user.getPassword(),
                     user.getName(),
+                    user.getSocialCode(),
                     user.getAuthorities()
             );
 
@@ -102,10 +109,15 @@ public class OAuthController {
 
             User user = naverUserService.processNaverUser(naverUser, tokens.getAccessToken());
 
+            Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+            Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
+
+
             CustomUserDetails userDetails = new CustomUserDetails(
                     user.getUsername(),
                     user.getPassword(),
                     user.getName(),
+                    socialCode,
                     user.getAuthorities()
             );
 

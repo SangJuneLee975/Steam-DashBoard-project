@@ -135,52 +135,31 @@ public class UserServiceImpl implements UserService {
     }
 
     public User updateUserProfile(String username, Map<String, String> updates) {
-        User user = userRepository.findByUserId(username)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username));
+        // username을 Long 타입 ID로 변환하는 로직이 필요한 경우
+        // Long userId = Long.parseLong(username); // 예를 들어, 사용자 ID가 숫자로만 구성된 경우
 
+        // findByUserId를 사용하여 User 객체 검색
+        Optional<User> userOpt = userRepository.findByUserId(username);
+        if (!userOpt.isPresent()) {
+            throw new RuntimeException("User not found");
+        }
+        User user = userOpt.get();
+
+        // 소셜 로그인 사용자의 경우 이메일 필드 업데이트 비활성화
         Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
-
-        // 로컬 사용자만 이메일 변경 가능
-
         if (socialLoginOpt.isPresent()) {
-            String newNickname = updates.get("nickname");
-            String newName = updates.get("name");
-
-            if (newNickname != null && !newNickname.isEmpty()) {
-                user.setNickname(newNickname);
-            }
-            if (newName != null && !newName.isEmpty()) {
-                user.setName(newName);
-            }
-        } else {
-            String newEmail = updates.get("email");
-            if (newEmail != null && !newEmail.isEmpty()) {
-                user.setEmail(newEmail);
-            }
-            String newNickname = updates.get("nickname");
-            String newName = updates.get("name");
-
-            if (newNickname != null && !newNickname.isEmpty()) {
-                user.setNickname(newNickname);
-            }
-            if (newName != null && !newName.isEmpty()) {
-                user.setName(newName);
+            SocialLogin socialLogin = socialLoginOpt.get();
+            if (socialLogin.getSocialCode() != null) {
+                updates.remove("email"); // 소셜 로그인 사용자는 이메일 변경을 무시
             }
         }
 
-
-        String newNickname = updates.get("nickname");
-        String newName = updates.get("name");
-      //  String newEmail = updates.get("email");
-
-        // 닉네임, 이름, 이메일 업데이트 로직 추가
-        if (newNickname != null && !newNickname.isEmpty()) {
-            user.setNickname(newNickname);
+        if (updates.containsKey("nickname")) {
+            user.setNickname((String) updates.get("nickname"));
         }
-        if (newName != null && !newName.isEmpty()) {
-            user.setName(newName);
+        if (updates.containsKey("name")) {
+            user.setName((String) updates.get("name"));
         }
-
 
         return userRepository.save(user);
     }
@@ -229,12 +208,17 @@ public class UserServiceImpl implements UserService {
         // 리프레시 토큰 생성 및 저장
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
 
+        Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
+
+
         // UserDetails 생성 및 SecurityContext에 저장
         Collection<? extends GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
         UserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
                 user.getName(),
+                socialCode,
                 authorities
         );
 

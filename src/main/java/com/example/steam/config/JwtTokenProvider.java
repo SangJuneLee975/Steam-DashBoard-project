@@ -3,6 +3,8 @@ package com.example.steam.config;
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.JwtToken;
 import com.example.steam.dto.User;
+import com.example.steam.entity.SocialLogin;
+import com.example.steam.repository.SocialLoginRepository;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import io.jsonwebtoken.*;
@@ -27,6 +29,7 @@ import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,14 +38,16 @@ public class JwtTokenProvider {
     private final Key key;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
+    private final SocialLoginRepository socialLoginRepository;
 
 
     // application.yaml에서 secret 값 가져와서 key에 저장
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RefreshTokenService refreshTokenService,UserRepository userRepository) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RefreshTokenService refreshTokenService,UserRepository userRepository,SocialLoginRepository socialLoginRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.refreshTokenService = refreshTokenService;
         this.userRepository = userRepository;
+        this.socialLoginRepository = socialLoginRepository;
     }
 
     // 사용자 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
@@ -58,6 +63,7 @@ public class JwtTokenProvider {
         String username = userDetails.getUsername();
 
         String encodedName = URLEncoder.encode(userDetails.getName(), StandardCharsets.UTF_8); // 이름 인코딩
+        Integer socialCode = userDetails.getSocialCode();  //소셜코드인코딩
 
         long now = System.currentTimeMillis();
         // Access Token 생성
@@ -71,6 +77,7 @@ public class JwtTokenProvider {
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.joining(",")))
                 .claim("name", encodedName)
+                .claim("socialCode", socialCode)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
@@ -110,12 +117,18 @@ public class JwtTokenProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
+        Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+
+        Integer socialCode = claims.get("socialCode", Integer.class); // 토큰에서 socialCode 추출
+
+
         // UserDetails 객체를 만들어서 Authentication return
         // UserDetails: interface, User: UserDetails를 구현한 class
         CustomUserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
                 user.getName(),
+                socialCode,
                 authorities
         );
 

@@ -3,6 +3,8 @@ package com.example.steam.controller;
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
 import com.example.steam.config.JwtTokenProvider;
+import com.example.steam.entity.SocialLogin;
+import com.example.steam.repository.SocialLoginRepository;
 import com.example.steam.repository.UserRepository;
 import com.example.steam.service.RefreshTokenService;
 import com.example.steam.service.UserService;
@@ -36,18 +38,20 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final SocialLoginRepository socialLoginRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 
     @Autowired
-    public UserController(UserService userService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService,UserRepository userRepository,ObjectMapper objectMapper) {
+    public UserController(UserService userService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService,UserRepository userRepository,ObjectMapper objectMapper,SocialLoginRepository socialLoginRepository) {
         this.userService = userService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
+        this.socialLoginRepository = socialLoginRepository;
     }
 
 
@@ -147,6 +151,12 @@ public class UserController {
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             User user = userService.updateUserProfile(userDetails.getUsername(), updates);
+
+            // 소셜 로그인 사용자의 경우 이메일 필드 업데이트 비활성화
+            Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+            if (socialLoginOpt.isPresent() && socialLoginOpt.get().getSocialCode() != null) {
+                updates.remove("email"); // 이메일 변경 요청을 무시
+            }
 
             return ResponseEntity.ok().body(user);
         } catch (Exception e) {

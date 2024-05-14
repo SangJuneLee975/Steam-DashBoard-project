@@ -9,14 +9,21 @@ public class CustomUserDetails implements UserDetails {
     private String username;
     private String password;
     private String name;
+    private Integer socialCode;
     private Collection<? extends GrantedAuthority> authorities;
 
     // User 엔티티를 기반으로 CustomUserDetails 객체를 생성하는 생성자
-    public CustomUserDetails(String username, String password, String name, Collection<? extends GrantedAuthority> authorities) {
+    public CustomUserDetails(String username, String password, String name, Integer socialCode, Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
         this.name = name;
+        this.socialCode = socialCode;
         this.authorities = authorities;
+    }
+
+    // socialCode의 getter
+    public Integer getSocialCode() {
+        return socialCode;
     }
 
     @Override

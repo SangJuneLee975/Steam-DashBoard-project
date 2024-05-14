@@ -3,8 +3,10 @@ package com.example.steam.service;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.JwtToken;
+import com.example.steam.entity.SocialLogin;
 import com.example.steam.entity.SteamLogin;
 import com.example.steam.model.SteamUser;
+import com.example.steam.repository.SocialLoginRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.minidev.json.JSONObject;
@@ -29,6 +31,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -41,6 +44,9 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private SocialLoginRepository socialLoginRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -78,10 +84,15 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                     return newUser;
                 });
 
+        Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
+
+
         CustomUserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
                 null,
                 user.getName(),
+                socialCode,
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
 

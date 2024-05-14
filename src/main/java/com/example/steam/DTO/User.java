@@ -32,6 +32,13 @@ public class User implements UserDetails {
     private String email;
 
     @Transient
+    private Integer socialCode;
+
+    public void setSocialCode(Integer socialCode) {
+        this.socialCode = socialCode;
+    }
+
+    @Transient
     private boolean isSocial; // 소셜 로그인 사용자인지 구분
 
     @Transient

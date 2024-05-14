@@ -102,12 +102,17 @@ public class NaverUserServiceImpl implements NaverUserService {
         // 리프레시 토큰 생성 및 저장
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
 
+        Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
+        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
+
+
         // JWT 토큰 발급 및 SecurityContext에 인증 정보 등록
         Collection<? extends GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
         UserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
                 user.getName(),
+                socialCode,
                 authorities
         );
 
