@@ -42,7 +42,7 @@ public class JwtTokenProvider {
 
 
     // application.yaml에서 secret 값 가져와서 key에 저장
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RefreshTokenService refreshTokenService,UserRepository userRepository,SocialLoginRepository socialLoginRepository) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RefreshTokenService refreshTokenService, UserRepository userRepository, SocialLoginRepository socialLoginRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.refreshTokenService = refreshTokenService;
@@ -180,8 +180,6 @@ public class JwtTokenProvider {
                 .claim("auth", authorities.stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.joining(",")))
-
-
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();

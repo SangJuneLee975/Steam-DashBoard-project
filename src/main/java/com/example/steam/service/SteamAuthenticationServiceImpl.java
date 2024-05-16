@@ -13,6 +13,7 @@ import net.minidev.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -39,6 +40,16 @@ import java.util.stream.Collectors;
 public class SteamAuthenticationServiceImpl implements SteamAuthenticationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SteamAuthenticationServiceImpl.class);
+
+    @Value("${steam.api.key}")
+    private String steamApiKey;
+
+    @Value("${steam.api.id}")
+    private String steamApiId;
+
+    @Value("${steam.api.url}")
+    private String steamApiUrl;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -56,6 +67,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
     // Steam OpenID 인증 URL 생성
     // 스팀 로그인 URL 생성 메소드
+    @Override
     public String buildSteamLoginUrl(String redirectUrl) {
         String baseUrl = "https://steamcommunity.com/openid/login";
         Map<String, String> parameters = new HashMap<>();
@@ -119,9 +131,9 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         headers.add("Content-Type", "application/x-www-form-urlencoded");
 
         Map<String, String> params = new HashMap<>();
-        params.put("key", "B1E26999871EEED1953CD7E5435A789A");
-        params.put("appid", "76561198052050893");
-        params.put("ticket", sessionTicket);  // 세션 티켓을 16진수로 인코딩된 문자열로 변환
+        params.put("key", steamApiKey);
+        params.put("appid", steamApiId);
+        params.put("ticket", sessionTicket); // 세션 티켓을 16진수로 인코딩된 문자열로 변환
 
         // 파라미터를 URL에 쿼리 스트링으로 추가
         String paramsAsString = params.keySet().stream()
@@ -194,5 +206,23 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         // 기존 사용자 계정에 Steam 계정을 연동
         user.setSteamId(steamId);
         userRepository.save(user);
+    }
+
+    @Override
+    public String getSteamNickname(String steamId) {
+        String url = String.format("%s?key=%s&steamids=%s", steamApiUrl, steamApiKey, steamId);
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode players = root.path("response").path("players");
+                if (players.isArray() && players.size() > 0) {
+                    return players.get(0).path("personaname").asText();
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to get Steam nickname", e);
+        }
+        return null;
     }
 }
