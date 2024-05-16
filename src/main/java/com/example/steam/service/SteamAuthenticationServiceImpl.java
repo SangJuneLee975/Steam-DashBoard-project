@@ -160,4 +160,39 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
             return false;
         }
     }
+
+    // Steam 응답을 검증하는 메서드
+    public boolean validateSteamResponse(Map<String, String> params) {
+        // Steam 응답을 검증하는 로직 추가
+        return true;
+    }
+
+    // claimedId에서 Steam ID를 추출하는 메서드
+    public String extractSteamId(String claimedId) {
+        // claimedId에서 Steam ID를 추출
+        return claimedId.replace("https://steamcommunity.com/openid/id/", "");
+    }
+
+    // Steam ID를 기반으로 사용자를 찾거나 새로 생성하는 메서드
+    public User findOrCreateSteamUser(String steamId) {
+        // 중복 체크 및 업데이트
+        Optional<User> existingUser = userRepository.findBySteamId(steamId);
+        if (existingUser.isPresent()) {
+            return existingUser.get();
+        } else {
+            User newUser = User.builder()
+                    .userId(steamId)
+                    .name("SteamUser")
+                    .build();
+            userRepository.save(newUser);
+            return newUser;
+        }
+    }
+
+    // 기존 사용자 계정에 Steam 계정을 연동하는 메서드
+    public void linkSteamAccount(User user, String steamId) {
+        // 기존 사용자 계정에 Steam 계정을 연동
+        user.setSteamId(steamId);
+        userRepository.save(user);
+    }
 }

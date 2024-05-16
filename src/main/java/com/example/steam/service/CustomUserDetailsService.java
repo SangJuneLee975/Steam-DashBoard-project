@@ -51,11 +51,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 mapRolesToAuthorities(user.getRoles())  // 권한 설정
         );
     }
+
     private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Set<Role> roles) {
         return roles.stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
     }
-
-
 }

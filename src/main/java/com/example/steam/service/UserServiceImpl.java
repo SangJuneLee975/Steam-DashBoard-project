@@ -233,7 +233,21 @@ public class UserServiceImpl implements UserService {
         socialLoginRepository.save(socialLogin);
 
 
+
         return user;
     }
+
+    @Override
+    public User findOrCreateSteamUser(String steamId) {
+        return userRepository.findBySteamId(steamId).orElseGet(() -> {
+            User newUser = User.builder()
+                    .userId(steamId)
+                    .name("SteamUser")
+                    .build();
+            userRepository.save(newUser);
+            return newUser;
+        });
+    }
+
 
 }

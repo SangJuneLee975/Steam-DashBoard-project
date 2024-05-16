@@ -48,6 +48,7 @@ public class CustomUserDetails implements UserDetails {
     public void setName(String name) {
         this.name = name;
     }
+
     // 계정의 만료, 잠금, 비밀번호 만료, 활성화 상태를 반환하는 메서드들
 
     @Override

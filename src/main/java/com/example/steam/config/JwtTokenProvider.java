@@ -59,6 +59,11 @@ public class JwtTokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof CustomUserDetails)) {
+            throw new ClassCastException("Principal은 CustomUserDetails의 인스턴스가 아니다.");
+        }
+
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String username = userDetails.getUsername();
 
@@ -73,9 +78,7 @@ public class JwtTokenProvider {
 
         String accessToken = Jwts.builder()
                 .setSubject(username)
-                .claim("auth", authentication.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.joining(",")))
+                .claim("auth", authorities)
                 .claim("name", encodedName)
                 .claim("socialCode", socialCode)
                 .setExpiration(accessTokenExpiresIn)
@@ -118,8 +121,7 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
 
         Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
-
-        Integer socialCode = claims.get("socialCode", Integer.class); // 토큰에서 socialCode 추출
+        Integer socialCode = claims.get("socialCode", Integer.class);
 
 
         // UserDetails 객체를 만들어서 Authentication return
@@ -140,18 +142,11 @@ public class JwtTokenProvider {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
-        } catch (SecurityException | MalformedJwtException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             log.error("Invalid JWT Token", e);
-        } catch (ExpiredJwtException e) {
-            log.error("Expired JWT Token", e);
-        } catch (UnsupportedJwtException e) {
-            log.error("Unsupported JWT Token", e);
-        } catch (IllegalArgumentException e) {
-            log.error("JWT claims string is empty.", e);
+            return false;
         }
-        return false;
     }
-
 
     // accessToken
     private Claims parseClaims(String accessToken) {

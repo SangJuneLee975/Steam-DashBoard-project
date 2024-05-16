@@ -3,6 +3,7 @@ package com.example.steam.controller;
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
+import com.example.steam.repository.UserRepository;
 import com.example.steam.service.SteamAuthenticationService;
 import com.example.steam.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,12 +28,14 @@ public class SteamOAuthController {
     private final UserService userService;
     private final SteamAuthenticationService steamService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Autowired
-    public SteamOAuthController(UserService userService, SteamAuthenticationService steamService, JwtTokenProvider jwtTokenProvider) {
+    public SteamOAuthController(UserService userService, SteamAuthenticationService steamService, JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
         this.userService = userService;
         this.steamService = steamService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Autowired
@@ -40,7 +43,7 @@ public class SteamOAuthController {
 
     @GetMapping("/login")
     public ResponseEntity<?> getSteamLoginUrl() {
-        String redirectUrl = "https://localhost:3000/oauth/steam/callback"; // 필요에 따라 조정
+        String redirectUrl = "https://localhost:3000/oauth/steam/callback"; // 콜백 URL
         try {
             String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("steamLoginUrl", loginUrl));
@@ -63,25 +66,51 @@ public class SteamOAuthController {
     }
 
     @GetMapping("/callback")
-    public ResponseEntity<?> handleSteamCallback(@RequestParam("openid.assoc_handle") String assocHandle,
-                                                 @RequestParam("openid.claimed_id") String claimedId,
-                                                 @RequestParam("openid.sig") String signature) {
+    public ResponseEntity<?> handleSteamCallback(@RequestParam Map<String, String> params) {
         try {
-            // 스팀 사용자 처리 로직
-            steamAuthService.processSteamUser(claimedId, "SteamUser"); // 스팀 사용자 정보 처리. 스팀에서 정보가져오는거 처리 필요함
+            String assocHandle = params.get("openid.assoc_handle");
+            String claimedId = params.get("openid.claimed_id");
+         //   String signature = params.get("openid.sig");
 
-            // 인증 객체 확인
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null) {
+            // Steam 응답을 검증하고 사용자 정보를 추출
+            boolean isValid = steamService.validateSteamResponse(params);
+            if (!isValid) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("스팀 인증 실패");
             }
 
-            // JWT 토큰 생성
-            String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
-            return ResponseEntity.ok(Map.of("accessToken", token, "claimedId", claimedId, "assocHandle", assocHandle));
+            // Steam ID를 기반으로 사용자를 찾거나 새로 생성
+            String steamId = steamService.extractSteamId(claimedId);
+            User user = userService.findOrCreateSteamUser(steamId);
 
+            // 로그인된 사용자가 있으면 기존 사용자 계정에 Steam 계정을 연동
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof CustomUserDetails) {
+                    CustomUserDetails userDetails = (CustomUserDetails) principal;
+                    User existingUser = userRepository.findByUserId(userDetails.getUsername())
+                            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                    steamService.linkSteamAccount(existingUser, steamId);
+                }
+            } else {
+                CustomUserDetails userDetails = new CustomUserDetails(
+                        user.getUsername(),
+                        user.getPassword(),
+                        user.getName(),
+                        user.getSocialCode(),
+                        user.getAuthorities()
+                );
+                authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+
+            String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
+            String redirectUrl = "https://localhost:3000";
+
+            // 응답 반환
+            return ResponseEntity.ok(Map.of("accessToken", token, "claimedId", claimedId, "assocHandle", assocHandle, "redirectUrl", redirectUrl));
         } catch (Exception e) {
-            logger.error("스팀 인증 실패d", e);
+            logger.error("스팀 인증 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("스팀 인증 실패");
         }
     }

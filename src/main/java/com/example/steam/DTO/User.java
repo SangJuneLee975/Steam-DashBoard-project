@@ -144,6 +144,12 @@ public class User implements UserDetails {
         this.password = password;
     }
 
+    public void setUserId(String userId) {
+        this.userId = userId; // 사용자 ID 설정
+    }
 
+    public void setSteamId(String steamId) {
+        this.userId = steamId; // 스팀 ID를 사용자 ID로 설정
+    }
 
 }
