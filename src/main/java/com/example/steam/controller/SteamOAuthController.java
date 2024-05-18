@@ -105,7 +105,7 @@ public class SteamOAuthController {
             }
 
             String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
-            String redirectUrl = "https://localhost:3000";
+            String redirectUrl = "https://localhost:3000/?accessToken=" + token;
 
             return ResponseEntity.ok(Map.of("accessToken", token, "claimedId", claimedId, "assocHandle", assocHandle, "redirectUrl", redirectUrl));
         } catch (Exception e) {
