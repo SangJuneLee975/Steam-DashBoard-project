@@ -194,7 +194,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         } else {
             User newUser = User.builder()
                     .userId(steamId)
-                    .name("SteamUser")
+                    .name("SteamUser")  // 임시로 SteamUser로 지정
                     .build();
             userRepository.save(newUser);
             return newUser;

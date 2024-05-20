@@ -7,6 +7,7 @@ import com.example.steam.repository.UserRepository;
 import com.example.steam.service.SteamAuthenticationService;
 import com.example.steam.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 
@@ -43,7 +47,7 @@ public class SteamOAuthController {
 
     @GetMapping("/login")
     public ResponseEntity<?> getSteamLoginUrl() {
-        String redirectUrl = "https://localhost:3000/oauth/steam/callback"; // 콜백 URL
+        String redirectUrl = "https://localhost:3000/HandleSteamCallback"; // 콜백 URL
         try {
             String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("steamLoginUrl", loginUrl));
@@ -57,7 +61,7 @@ public class SteamOAuthController {
     public ResponseEntity<?> getSteamConnectUrl() {
         try {
             String redirectUrl = "https://localhost:8080/oauth/steam/callback";
-            String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
+            String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("url", loginUrl));
         } catch (Exception e) {
             logger.error("Steam 로그인 URL 생성 중 오류 발생", e);
@@ -66,16 +70,15 @@ public class SteamOAuthController {
     }
 
     @GetMapping("/callback")
-    public ResponseEntity<?> handleSteamCallback(@RequestParam Map<String, String> params) {
+    public void handleSteamCallback(@RequestParam Map<String, String> params, HttpServletResponse response) {
         try {
             String assocHandle = params.get("openid.assoc_handle");
             String claimedId = params.get("openid.claimed_id");
-         //   String signature = params.get("openid.sig");
 
-            // Steam 응답을 검증하고 사용자 정보를 추출
             boolean isValid = steamService.validateSteamResponse(params);
             if (!isValid) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("스팀 인증 실패");
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "스팀 인증 실패");
+                return;
             }
 
 
@@ -105,12 +108,17 @@ public class SteamOAuthController {
             }
 
             String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
-            String redirectUrl = "https://localhost:3000/?accessToken=" + token;
+            String redirectUrl = "https://localhost:3000/?accessToken=" + URLEncoder.encode(token, StandardCharsets.UTF_8) +
+                    "&claimedId=" + URLEncoder.encode(claimedId, StandardCharsets.UTF_8);
 
-            return ResponseEntity.ok(Map.of("accessToken", token, "claimedId", claimedId, "assocHandle", assocHandle, "redirectUrl", redirectUrl));
+            response.sendRedirect(redirectUrl);
         } catch (Exception e) {
             logger.error("Steam authentication failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Steam authentication failed");
+            try {
+                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Steam authentication failed");
+            } catch (IOException ioException) {
+                logger.error("리다이렉트 실패", ioException);
+            }
         }
     }
 }
