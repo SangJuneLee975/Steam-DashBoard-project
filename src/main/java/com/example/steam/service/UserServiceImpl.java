@@ -161,6 +161,10 @@ public class UserServiceImpl implements UserService {
             user.setName((String) updates.get("name"));
         }
 
+        if (updates.containsKey("steamId")) {
+            user.setSteamId(updates.get("steamId"));
+        }
+
         return userRepository.save(user);
     }
 
@@ -247,6 +251,29 @@ public class UserServiceImpl implements UserService {
             userRepository.save(newUser);
             return newUser;
         });
+    }
+
+    // 스팀 계정 연동 여부를 확인하는 메서드
+    public boolean isSteamLinked(String userId) {
+        Optional<User> userOptional = userRepository.findByUserId(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return user.getSteamId() != null;
+        }
+        return false;
+    }
+
+    // 스팀 계정 연동된 사용자의 정보를 반환하는 메서드
+    public Optional<User> getUserWithSteamInfo(String userId) {
+        Optional<User> userOptional = userRepository.findByUserId(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (user.getSteamId() != null) {
+                // 추가 정보 처리 로직을 여기에 작성할 수 있습니다.
+                return Optional.of(user);
+            }
+        }
+        return Optional.empty();
     }
 
 

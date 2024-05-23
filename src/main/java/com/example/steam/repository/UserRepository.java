@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
    // Optional<User> findByUsername(String username);
 
     // SteamLogin 테이블과 조인하여 steamId로 User를 찾는 쿼리문
-    @Query("SELECT u FROM User u JOIN SteamLogin sl ON u.id = sl.user.id WHERE sl.steamId = :steamId")
-    Optional<User> findBySteamId(@Param("steamId") String steamId);
+   // @Query("SELECT u FROM User u JOIN SteamLogin sl ON u.id = sl.user.id WHERE sl.steamId = :steamId")
+  //  Optional<User> findBySteamId(@Param("steamId") String steamId);
+
+    Optional<User> findBySteamId(String steamId);
+
+    Optional<User> findByUserIdOrSteamId(String userId, String steamId);
 }

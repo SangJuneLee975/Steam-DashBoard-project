@@ -49,7 +49,7 @@ public class SteamOAuthController {
     public ResponseEntity<?> getSteamLoginUrl() {
         String redirectUrl = "https://localhost:3000/HandleSteamCallback"; // 콜백 URL
         try {
-            String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
+            String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("steamLoginUrl", loginUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Steam 로그인 URL 생성 중 오류 발생");
@@ -61,7 +61,7 @@ public class SteamOAuthController {
     public ResponseEntity<?> getSteamConnectUrl() {
         try {
             String redirectUrl = "https://localhost:8080/oauth/steam/callback";
-            String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
+            String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("url", loginUrl));
         } catch (Exception e) {
             logger.error("Steam 로그인 URL 생성 중 오류 발생", e);
@@ -72,44 +72,22 @@ public class SteamOAuthController {
     @GetMapping("/callback")
     public void handleSteamCallback(@RequestParam Map<String, String> params, HttpServletResponse response) {
         try {
-            String assocHandle = params.get("openid.assoc_handle");
             String claimedId = params.get("openid.claimed_id");
+            String steamId = steamAuthService.extractSteamId(claimedId);
 
-            boolean isValid = steamService.validateSteamResponse(params);
-            if (!isValid) {
+            if (!steamAuthService.validateSteamResponse(params)) {
                 response.sendError(HttpStatus.UNAUTHORIZED.value(), "스팀 인증 실패");
                 return;
             }
 
+            String steamNickname = steamAuthService.getSteamNickname(steamId);
+            steamAuthService.handleSteamCallback(steamId, steamNickname, null);
 
-            // Steam ID를 기반으로 사용자를 찾거나 새로 생성
-            String steamId = steamService.extractSteamId(claimedId);
-            User user = userService.findOrCreateSteamUser(steamId);
-      //      String steamNickname = steamService.getSteamNickname(steamId); // 스팀 닉네임 추출
-
-            CustomUserDetails userDetails = new CustomUserDetails(
-                    user.getUsername(),
-                    user.getPassword(),
-                    user.getName(),
-                    user.getSocialCode(),
-                    user.getAuthorities()
-            );
-
-            // 로그인된 사용자가 있으면 기존 사용자 계정에 Steam 계정을 연동
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof CustomUserDetails) {
-                CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
-                User existingUser = userRepository.findByUserId(currentUserDetails.getUsername())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-                steamService.linkSteamAccount(existingUser, steamId);
-            } else {
-                authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-
             String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
             String redirectUrl = "https://localhost:3000/?accessToken=" + URLEncoder.encode(token, StandardCharsets.UTF_8) +
-                    "&claimedId=" + URLEncoder.encode(claimedId, StandardCharsets.UTF_8);
+                    "&claimedId=" + URLEncoder.encode(claimedId, StandardCharsets.UTF_8) +
+                    "&steamNickname=" + URLEncoder.encode(steamNickname, StandardCharsets.UTF_8);
 
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {

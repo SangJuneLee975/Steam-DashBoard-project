@@ -91,7 +91,12 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
         User user = userRepository.findByUserId(steamId)
                 .orElseGet(() -> {
-                    User newUser = new User(steamId, null, displayName, null, null, true);
+                    User newUser = User.builder()
+                            .userId(steamId)
+                            .name(displayName)
+                            .isSocial(true)
+                            .steamId(steamId)
+                            .build();
                     userRepository.save(newUser);
                     return newUser;
                 });
@@ -125,7 +130,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     }
 
     @Override
-    public boolean validateSessionTicket(String sessionTicket, String steamId, String expectedSteamId) {   // expectedSteamId 스팀아이디 검증 
+    public boolean validateSessionTicket(String sessionTicket, String steamId, String expectedSteamId) {
         final String url = "https://partner.steam-api.com/ISteamUserAuth/AuthenticateUserTicket/v1/";
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/x-www-form-urlencoded");
@@ -133,9 +138,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         Map<String, String> params = new HashMap<>();
         params.put("key", steamApiKey);
         params.put("appid", steamApiId);
-        params.put("ticket", sessionTicket); // 세션 티켓을 16진수로 인코딩된 문자열로 변환
+        params.put("ticket", sessionTicket);
 
-        // 파라미터를 URL에 쿼리 스트링으로 추가
         String paramsAsString = params.keySet().stream()
                 .map(key -> key + "=" + params.get(key))
                 .collect(Collectors.joining("&"));
@@ -187,14 +191,14 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
     // Steam ID를 기반으로 사용자를 찾거나 새로 생성하는 메서드
     public User findOrCreateSteamUser(String steamId) {
-        // 중복 체크 및 업데이트
         Optional<User> existingUser = userRepository.findBySteamId(steamId);
         if (existingUser.isPresent()) {
             return existingUser.get();
         } else {
             User newUser = User.builder()
                     .userId(steamId)
-                    .name("SteamUser")  // 임시로 SteamUser로 지정
+                    .name("SteamUser")
+                    .steamId(steamId)
                     .build();
             userRepository.save(newUser);
             return newUser;
@@ -202,10 +206,61 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     }
 
     // 기존 사용자 계정에 Steam 계정을 연동하는 메서드
+    @Override
     public void linkSteamAccount(User user, String steamId) {
-        // 기존 사용자 계정에 Steam 계정을 연동
         user.setSteamId(steamId);
         userRepository.save(user);
+        logger.info("Steam ID {} 사용자 연결 {}", steamId, user.getUserId());
+    }
+
+    @Override
+    @Transactional
+    public void handleSteamCallback(String steamId, String displayName, String accessToken) {
+        logger.info("Handling Steam callback with steamId: {}, displayName: {}", steamId, displayName);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = null;
+
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails currentUserDetails = (CustomUserDetails) authentication.getPrincipal();
+            user = userRepository.findByUserIdOrSteamId(currentUserDetails.getUsername(), steamId).orElse(null);
+            logger.info("Found user by authentication or steamId: {}", user);
+        }
+
+        if (user == null) {
+            user = userRepository.findBySteamId(steamId).orElse(null);
+            logger.info("Found user by steamId: {}", user);
+        }
+
+        if (user == null) {
+            user = User.builder()
+                    .steamId(steamId)
+                    .name(displayName)
+                    .userId(steamId) // Unique ID for steam users
+                    .isSocial(true)
+                    .build();
+            logger.info("Created new user: {}", user);
+        } else {
+            user.setSteamId(steamId);
+            user.setName(displayName);
+            logger.info("Updated existing user: {}", user);
+        }
+        userRepository.save(user);
+        logger.info("Saved user: {}", user);
+
+        CustomUserDetails userDetails = new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                user.getName(),
+                user.getSocialCode(),
+                AuthorityUtils.createAuthorityList("ROLE_USER")
+        );
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        logger.info("Steam user authenticated with steamId: {}", steamId);
     }
 
     @Override
@@ -225,4 +280,5 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         }
         return null;
     }
+
 }

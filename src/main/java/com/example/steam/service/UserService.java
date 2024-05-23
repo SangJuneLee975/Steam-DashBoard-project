@@ -6,12 +6,13 @@ import com.example.steam.model.GoogleUser;
 import com.example.steam.model.NaverUser;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface UserService {
    public String signUp(User user, String passwordConfirm) ;
    public Map<String, String> login(String username, String password);
 
-   User processGoogleUser(GoogleUser googleUser, String accessToken);
+   public User processGoogleUser(GoogleUser googleUser, String accessToken);
 
   // User processNaverUser(NaverUser naverUser, String accessToken);
 
@@ -19,5 +20,9 @@ public interface UserService {
 
    public User updateUserProfile(String username, Map<String, String> updates);
 
-   User findOrCreateSteamUser(String steamId);
+   public User findOrCreateSteamUser(String steamId);
+
+   public boolean isSteamLinked(String userId);
+
+   public Optional<User> getUserWithSteamInfo(String userId);
 }

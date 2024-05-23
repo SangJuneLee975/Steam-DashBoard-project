@@ -31,6 +31,9 @@ public class User implements UserDetails {
     private String nickname;
     private String email;
 
+    @Column(unique = true)
+    private String steamId; // 스팀 ID 컬럼
+
     @Transient
     private Integer socialCode;
 
@@ -125,14 +128,14 @@ public class User implements UserDetails {
 
     // Builder 패턴 적용
     @Builder
-    public User(String userId, String password, String name, String nickname, String email, boolean isSocial) {
+    public User(String userId, String password, String name, String nickname, String email, boolean isSocial, String steamId) {
         this.userId = userId;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.email = email;
         this.isSocial = isSocial;
-
+        this.steamId = steamId;
 
     }
 

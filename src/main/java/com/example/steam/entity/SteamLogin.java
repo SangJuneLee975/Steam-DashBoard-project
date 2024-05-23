@@ -16,9 +16,6 @@ public class SteamLogin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private String steamId;
-
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;

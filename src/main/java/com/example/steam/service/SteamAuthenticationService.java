@@ -21,4 +21,6 @@ public interface SteamAuthenticationService {
    public void linkSteamAccount(User user, String steamId);   // 기존 사용자 계정에 Steam 계정을 연동하는 메서드
 
    public String getSteamNickname(String steamId); // Steam ID를 통해 프로필 이름을 가져오는 메서드
+
+   public void handleSteamCallback(String steamId, String displayName, String accessToken);
 }

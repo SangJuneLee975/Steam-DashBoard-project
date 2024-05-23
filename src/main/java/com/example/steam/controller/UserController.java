@@ -184,4 +184,22 @@ public class UserController {
 
         return ResponseEntity.ok(tokens);
     }
+
+    @GetMapping("/isSteamLinked")
+    public ResponseEntity<?> isSteamLinked(Authentication authentication) {
+        String userId = authentication.getName();
+        boolean isLinked = userService.isSteamLinked(userId);
+        return ResponseEntity.ok(isLinked);
+    }
+
+    @GetMapping("/steamInfo")
+    public ResponseEntity<?> getSteamInfo(Authentication authentication) {
+        String userId = authentication.getName();
+        Optional<User> userOptional = userService.getUserWithSteamInfo(userId);
+        if (userOptional.isPresent()) {
+            return ResponseEntity.ok(userOptional.get());
+        } else {
+            return ResponseEntity.status(404).body("Steam account not linked");
+        }
+    }
 }
