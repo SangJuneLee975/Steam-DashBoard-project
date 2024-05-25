@@ -102,8 +102,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 });
 
         Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
-        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
-
+        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;
 
         CustomUserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
@@ -112,6 +111,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 socialCode,
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
+
+        userDetails.setSteamId(steamId);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,
@@ -189,7 +190,6 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         return claimedId.replace("https://steamcommunity.com/openid/id/", "");
     }
 
-    // Steam ID를 기반으로 사용자를 찾거나 새로 생성하는 메서드
     public User findOrCreateSteamUser(String steamId) {
         Optional<User> existingUser = userRepository.findBySteamId(steamId);
         if (existingUser.isPresent()) {
@@ -216,7 +216,6 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     @Override
     @Transactional
     public void handleSteamCallback(String steamId, String displayName, String accessToken) {
-        logger.info("Handling Steam callback with steamId: {}, displayName: {}", steamId, displayName);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = null;
 
@@ -235,7 +234,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
             user = User.builder()
                     .steamId(steamId)
                     .name(displayName)
-                    .userId(steamId) // Unique ID for steam users
+                    .userId(steamId)
                     .isSocial(true)
                     .build();
             logger.info("Created new user: {}", user);
@@ -255,6 +254,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
 
+        userDetails.setSteamId(steamId);
+
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
         );
@@ -262,6 +263,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
         logger.info("Steam user authenticated with steamId: {}", steamId);
     }
+
 
     @Override
     public String getSteamNickname(String steamId) {

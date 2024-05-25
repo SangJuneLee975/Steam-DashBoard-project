@@ -81,9 +81,28 @@ public class SteamOAuthController {
             }
 
             String steamNickname = steamAuthService.getSteamNickname(steamId);
-            steamAuthService.handleSteamCallback(steamId, steamNickname, null);
 
+            // 현재 인증된 사용자 정보 가져오기
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            // 실제로 CustomUserDetails 객체를 가져오는지 확인하는 로깅
+            if (!(authentication.getPrincipal() instanceof CustomUserDetails)) {
+                logger.error("Principal is not of type CustomUserDetails: {}", authentication.getPrincipal().getClass());
+                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Authentication Principal type mismatch");
+                return;
+            }
+
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            User user = userRepository.findByUserId(userDetails.getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
+
+            // 사용자의 Steam ID 업데이트 및 isSteamLinked 필드 설정
+            user.setSteamId(steamId);
+            user.setIsSteamLinked(true);
+
+            // 업데이트된 사용자 정보 저장
+            userRepository.save(user);
+
+            // 새로운 사용자 정보로 토큰 생성
             String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
             String redirectUrl = "https://localhost:3000/?accessToken=" + URLEncoder.encode(token, StandardCharsets.UTF_8) +
                     "&claimedId=" + URLEncoder.encode(claimedId, StandardCharsets.UTF_8) +
