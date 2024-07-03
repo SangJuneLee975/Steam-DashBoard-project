@@ -233,24 +233,34 @@ public class UserServiceImpl implements UserService {
         JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
 
         // 소셜 로그인 정보 업데이트
-        socialLogin.setAccessToken(jwtToken.getAccessToken()); // Access Token 저장
+        socialLogin.setAccessToken(jwtToken.getAccessToken());
         socialLoginRepository.save(socialLogin);
-
 
 
         return user;
     }
 
     @Override
-    public User findOrCreateSteamUser(String steamId) {
-        return userRepository.findBySteamId(steamId).orElseGet(() -> {
-            User newUser = User.builder()
-                    .userId(steamId)
-                    .name("SteamUser")
-                    .build();
-            userRepository.save(newUser);
-            return newUser;
-        });
+    public CustomUserDetails findOrCreateSteamUser(String steamId, String steamNickname) {
+        User user = userRepository.findBySteamId(steamId)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .userId(steamId)
+                            .name(steamNickname)
+                            .isSocial(true)
+                            .steamId(steamId)
+                            .build();
+                    userRepository.save(newUser);
+                    return newUser;
+                });
+
+        return new CustomUserDetails(
+                user.getUsername(),
+                user.getPassword(),
+                user.getName(),
+                user.getSocialCode(),
+                AuthorityUtils.createAuthorityList("ROLE_USER")
+        );
     }
 
     // 스팀 계정 연동 여부를 확인하는 메서드
@@ -269,12 +279,22 @@ public class UserServiceImpl implements UserService {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (user.getSteamId() != null) {
-                // 추가 정보 처리 로직을 여기에 작성할 수 있습니다.
+
                 return Optional.of(user);
             }
         }
         return Optional.empty();
     }
 
-
+    @Override
+    @Transactional
+    public void linkSteamAccount(String userId, String steamId, String steamNickname) {
+        logger.info("Linking Steam account: userId={}, steamId={}, steamNickname={}", userId, steamId, steamNickname);
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+        user.setSteamId(steamId);
+        user.setSteamNickname(steamNickname); // 스팀 닉네임 저장
+        userRepository.save(user);
+        logger.info("Steam account linked successfully for userId={}", userId);
+    }
 }

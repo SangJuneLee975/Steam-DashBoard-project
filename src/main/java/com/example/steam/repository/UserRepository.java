@@ -2,6 +2,7 @@ package com.example.steam.repository;
 
 import com.example.steam.dto.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -24,4 +25,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findBySteamId(String steamId);
 
     Optional<User> findByUserIdOrSteamId(String userId, String steamId);
+
+    @Modifying
+    @Query("UPDATE User u SET u.steamId = :steamId, u.steamNickname = :steamNickname WHERE u.userId = :userId")
+    int linkSteamAccount(@Param("userId") String userId, @Param("steamId") String steamId, @Param("steamNickname") String steamNickname);
+
+
 }

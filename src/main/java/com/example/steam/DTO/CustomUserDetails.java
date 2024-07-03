@@ -10,7 +10,6 @@ public class CustomUserDetails implements UserDetails {
     private String password;
     private String name;
     private Integer socialCode;
-    private String steamId;
     private Collection<? extends GrantedAuthority> authorities;
 
     // User 엔티티를 기반으로 CustomUserDetails 객체를 생성하는 생성자
@@ -31,19 +30,6 @@ public class CustomUserDetails implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
     }
-
-
-
-
-    // steamId의  setter 추가
-    public String getSteamId() {
-        return steamId;
-    }
-
-    public void setSteamId(String steamId) {
-        this.steamId = steamId;
-    }
-
 
     @Override
     public String getPassword() {

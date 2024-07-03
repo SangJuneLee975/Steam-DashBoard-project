@@ -34,10 +34,19 @@ public class User implements UserDetails {
     @Column(unique = true)
     private String steamId; // 스팀 ID 컬럼
 
-    private boolean isSteamLinked; // 스팀 연동 여부 저장
-
     @Transient
     private Integer socialCode;
+
+
+
+    private String steamNickname;
+
+    // Getter 및 Setter 메서드 추가
+    public void setSteamNickname(String steamNickname) {
+        this.steamNickname = steamNickname;
+    }
+
+
 
     public void setSocialCode(Integer socialCode) {
         this.socialCode = socialCode;
@@ -153,19 +162,8 @@ public class User implements UserDetails {
         this.userId = userId; // 사용자 ID 설정
     }
 
-    // 스팀 ID 설정 메서드
-    public void setSteamId(String steamId) {
-        this.steamId = steamId;
-        this.isSteamLinked = steamId != null;
-    }
 
-    public void setIsSteamLinked(boolean isSteamLinked) {
-        this.isSteamLinked = isSteamLinked;
+    public void setSteamId(String steamNickname) {
+        this.steamId = steamNickname; // 스팀 닉네임을 steam_id에 저장
     }
-
-    // 스팀 연동 여부 확인 메서드
-    public boolean isSteamLinked() {
-        return isSteamLinked;
-    }
-
 }

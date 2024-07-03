@@ -2,26 +2,31 @@ package com.example.steam.controller;
 
 import com.example.steam.config.JwtTokenProvider;
 import com.example.steam.dto.CustomUserDetails;
+import com.example.steam.dto.SteamLinkRequest;
 import com.example.steam.dto.User;
 import com.example.steam.repository.UserRepository;
+import com.example.steam.service.CustomUserDetailsService;
 import com.example.steam.service.SteamAuthenticationService;
 import com.example.steam.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
+
 
 
 @RequestMapping("/oauth/steam")
@@ -29,27 +34,41 @@ import java.util.Map;
 public class SteamOAuthController {
     private static final Logger logger = LoggerFactory.getLogger(SteamOAuthController.class);
 
+    @Value("${steam.api.key}")
+    private String steamApiKey;
+
+    @Value("${steam.api.id}")
+    private String steamApiId;
+
+    @Value("${steam.api.url}")
+    private String steamApiUrl;      // https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/
+
     private final UserService userService;
     private final SteamAuthenticationService steamService;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final RestTemplate restTemplate;
 
     @Autowired
-    public SteamOAuthController(UserService userService, SteamAuthenticationService steamService, JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+    public SteamOAuthController(UserService userService, SteamAuthenticationService steamService, JwtTokenProvider jwtTokenProvider, UserRepository userRepository, CustomUserDetailsService customUserDetailsService, RestTemplate restTemplate) {
         this.userService = userService;
         this.steamService = steamService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
+        this.customUserDetailsService = customUserDetailsService;
+        this.restTemplate = restTemplate;
     }
+
 
     @Autowired
     private SteamAuthenticationService steamAuthService;
 
     @GetMapping("/login")
     public ResponseEntity<?> getSteamLoginUrl() {
-        String redirectUrl = "https://localhost:3000/HandleSteamCallback"; // 콜백 URL
+        String redirectUrl = "https://localhost:8080/oauth/steam/callback"; // 콜백 URL
         try {
-            String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
+            String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("steamLoginUrl", loginUrl));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Steam 로그인 URL 생성 중 오류 발생");
@@ -60,62 +79,96 @@ public class SteamOAuthController {
     @GetMapping("/connect")
     public ResponseEntity<?> getSteamConnectUrl() {
         try {
-            String redirectUrl = "https://localhost:8080/oauth/steam/callback";
-            String loginUrl = steamAuthService.buildSteamLoginUrl(redirectUrl);
+            String redirectUrl = "https://localhost:3000/oauth/steam/callback";
+            String loginUrl = steamService.buildSteamLoginUrl(redirectUrl);
             return ResponseEntity.ok(Map.of("url", loginUrl));
         } catch (Exception e) {
-            logger.error("Steam 로그인 URL 생성 중 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Steam 로그인 URL 생성 중 오류 발생");
         }
     }
 
     @GetMapping("/callback")
-    public void handleSteamCallback(@RequestParam Map<String, String> params, HttpServletResponse response) {
+    public void handleSteamCallback(@RequestParam("openid.claimed_id") String claimedId, @RequestParam Map<String, String> params, HttpServletResponse response) {
         try {
-            String claimedId = params.get("openid.claimed_id");
-            String steamId = steamAuthService.extractSteamId(claimedId);
-
-            if (!steamAuthService.validateSteamResponse(params)) {
-                response.sendError(HttpStatus.UNAUTHORIZED.value(), "스팀 인증 실패");
+            if (claimedId == null || claimedId.isEmpty()) {
+                response.sendError(HttpStatus.BAD_REQUEST.value(), "Invalid callback parameters.");
                 return;
             }
+            String steamId = steamService.extractSteamId(claimedId);
+            if (!steamService.validateSteamResponse(params)) {
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Steam response validation failed");
+                return;
+            }
+            String steamNickname = steamService.getSteamNickname(steamId);
 
-            String steamNickname = steamAuthService.getSteamNickname(steamId);
-
-            // 현재 인증된 사용자 정보 가져오기
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            // 실제로 CustomUserDetails 객체를 가져오는지 확인하는 로깅
-            if (!(authentication.getPrincipal() instanceof CustomUserDetails)) {
-                logger.error("Principal is not of type CustomUserDetails: {}", authentication.getPrincipal().getClass());
-                response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Authentication Principal type mismatch");
+            if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Unauthorized user");
                 return;
             }
-
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            User user = userRepository.findByUserId(userDetails.getUsername()).orElseThrow(() -> new RuntimeException("User not found"));
+            String userId = userDetails.getUsername();
 
-            // 사용자의 Steam ID 업데이트 및 isSteamLinked 필드 설정
-            user.setSteamId(steamId);
-            user.setIsSteamLinked(true);
+            userService.linkSteamAccount(userId, steamId, steamNickname);
 
-            // 업데이트된 사용자 정보 저장
-            userRepository.save(user);
-
-            // 새로운 사용자 정보로 토큰 생성
-            String token = jwtTokenProvider.generateToken(authentication).getAccessToken();
-            String redirectUrl = "https://localhost:3000/?accessToken=" + URLEncoder.encode(token, StandardCharsets.UTF_8) +
-                    "&claimedId=" + URLEncoder.encode(claimedId, StandardCharsets.UTF_8) +
-                    "&steamNickname=" + URLEncoder.encode(steamNickname, StandardCharsets.UTF_8);
+            String accessToken = jwtTokenProvider.generateToken(authentication).getAccessToken();
+            String redirectUrl = "https://localhost:3000/oauth/steam/callback?accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
+                    "&steamId=" + URLEncoder.encode(steamId, StandardCharsets.UTF_8) +
+                    "&redirectUrl=/";  // 최종 리디렉션할 URL
 
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {
-            logger.error("Steam authentication failed", e);
             try {
                 response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Steam authentication failed");
             } catch (IOException ioException) {
-                logger.error("리다이렉트 실패", ioException);
+                logger.error("Redirect failed", ioException);
             }
         }
     }
+
+    @PostMapping("/link")
+    public ResponseEntity<?> linkSteamAccount(@RequestBody SteamLinkRequest steamLinkRequest) {
+        String steamId = steamLinkRequest.getSteamId();
+        String steamNickname = steamLinkRequest.getSteamNickname();
+        String userId = getUserIdFromSessionOrToken(); // 현재 로그인된 사용자 ID를 가져오기
+
+        // 사용자 정보를 DB에서 찾기
+        Optional<User> userOptional = userRepository.findByUserId(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setSteamId(steamId); // Steam ID 설정
+            user.setSteamNickname(steamNickname); // Steam 닉네임 설정
+
+            userRepository.save(user); // 사용자 정보 업데이트
+
+            return ResponseEntity.ok("Steam 계정이 성공적으로 연동되었습니다.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자를 찾을 수 없습니다.");
+        }
+    }
+
+    // 현재 로그인된 사용자 ID를 가져옴
+    private String getUserIdFromSessionOrToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            return ((CustomUserDetails) authentication.getPrincipal()).getUsername();
+        }
+        throw new IllegalStateException("사용자 ID를 가져올 수 없습니다.");
+    }
+
+    @GetMapping("/profile/{steamId}")    //pathvariable
+    public ResponseEntity<?> getSteamProfile(@PathVariable("steamId") String steamId) {
+        String url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamApiKey + "&steamids=" + steamId;
+
+        try {
+            logger.info("Requesting Steam profile for SteamID: {}", steamId);
+            String response = restTemplate.getForObject(url, String.class);
+            logger.info("Received Steam profile response: {}", response);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Failed to fetch Steam profile for SteamID: {}", steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch Steam profile");
+        }
+    }
 }
+

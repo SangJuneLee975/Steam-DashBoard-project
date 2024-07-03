@@ -20,6 +20,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
@@ -102,7 +103,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 });
 
         Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
-        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;
+        Integer socialCode = socialLoginOpt.isPresent() ? socialLoginOpt.get().getSocialCode() : null;  // socialCode가 없는 경우 null 사용
+
 
         CustomUserDetails userDetails = new CustomUserDetails(
                 user.getUsername(),
@@ -111,8 +113,6 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 socialCode,
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
-
-        userDetails.setSteamId(steamId);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails,
@@ -130,66 +130,18 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     }
 
-    @Override
-    public boolean validateSessionTicket(String sessionTicket, String steamId, String expectedSteamId) {
-        final String url = "https://partner.steam-api.com/ISteamUserAuth/AuthenticateUserTicket/v1/";
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Type", "application/x-www-form-urlencoded");
-
-        Map<String, String> params = new HashMap<>();
-        params.put("key", steamApiKey);
-        params.put("appid", steamApiId);
-        params.put("ticket", sessionTicket);
-
-        String paramsAsString = params.keySet().stream()
-                .map(key -> key + "=" + params.get(key))
-                .collect(Collectors.joining("&"));
-
-        String fullUrl = url + "?" + paramsAsString;
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                fullUrl, HttpMethod.GET, new HttpEntity<>(headers), String.class);
-
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            logger.error("스팀 티켓 검증 실패: HTTP 오류");
-            return false;
-        }
-
-        try {
-            JsonNode jsonResponse = objectMapper.readTree(response.getBody());
-            JsonNode steamIdNode = jsonResponse.path("response").path("steamid");
-
-            if (steamIdNode.isMissingNode()) {
-                logger.error("응답에서 SteamID를 찾을 수 없습니다.");
-                return false;
-            }
-
-            String returnedSteamId = steamIdNode.asText();
-            if (returnedSteamId.equals(expectedSteamId)) {
-                logger.info("SteamID 검증 성공: {}", returnedSteamId);
-                return true;
-            } else {
-                logger.error("SteamID 검증 실패: 예상된 SteamID {}, 받은 SteamID {}", expectedSteamId, returnedSteamId);
-                return false;
-            }
-        } catch (Exception e) {
-            logger.error("Steam API로부터 JSON 응답 파싱 중 오류 발생", e);
-            return false;
-        }
-    }
-
     // Steam 응답을 검증하는 메서드
     public boolean validateSteamResponse(Map<String, String> params) {
-        // Steam 응답을 검증하는 로직 추가
+
         return true;
     }
 
     // claimedId에서 Steam ID를 추출하는 메서드
     public String extractSteamId(String claimedId) {
-        // claimedId에서 Steam ID를 추출
         return claimedId.replace("https://steamcommunity.com/openid/id/", "");
     }
 
+    // Steam ID를 기반으로 사용자를 찾거나 새로 생성하는 메서드
     public User findOrCreateSteamUser(String steamId) {
         Optional<User> existingUser = userRepository.findBySteamId(steamId);
         if (existingUser.isPresent()) {
@@ -207,15 +159,20 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
 
     // 기존 사용자 계정에 Steam 계정을 연동하는 메서드
     @Override
-    public void linkSteamAccount(User user, String steamId) {
+    @Transactional
+    public void linkSteamAccount(String userId, String steamId, String steamNickname, boolean isSteamLinked) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
         user.setSteamId(steamId);
+        user.setSteamNickname(steamNickname); // 스팀 닉네임 저장
         userRepository.save(user);
-        logger.info("Steam ID {} 사용자 연결 {}", steamId, user.getUserId());
     }
+
 
     @Override
     @Transactional
     public void handleSteamCallback(String steamId, String displayName, String accessToken) {
+        logger.info("Handling Steam callback with steamId: {}, displayName: {}", steamId, displayName);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = null;
 
@@ -236,11 +193,13 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                     .name(displayName)
                     .userId(steamId)
                     .isSocial(true)
+
                     .build();
             logger.info("Created new user: {}", user);
         } else {
             user.setSteamId(steamId);
             user.setName(displayName);
+
             logger.info("Updated existing user: {}", user);
         }
         userRepository.save(user);
@@ -254,8 +213,6 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
 
-        userDetails.setSteamId(steamId);
-
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
         );
@@ -265,22 +222,28 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     }
 
 
+    // 닉네임 가져오기
     @Override
     public String getSteamNickname(String steamId) {
-        String url = String.format("%s?key=%s&steamids=%s", steamApiUrl, steamApiKey, steamId);
+        String url = String.format("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=%s&steamids=%s", steamApiKey, steamId);
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 JsonNode root = objectMapper.readTree(response.getBody());
                 JsonNode players = root.path("response").path("players");
                 if (players.isArray() && players.size() > 0) {
-                    return players.get(0).path("personaname").asText();
+                    String personaname = players.get(0).path("personaname").asText();
+                    logger.info("Steam nickname retrieved: {}", personaname);
+                    return personaname;
+                } else {
+                    logger.warn("No players found in Steam response.");
                 }
+            } else {
+                logger.error("Failed to get Steam nickname: HTTP {}", response.getStatusCode());
             }
         } catch (Exception e) {
             logger.error("Failed to get Steam nickname", e);
         }
         return null;
     }
-
 }

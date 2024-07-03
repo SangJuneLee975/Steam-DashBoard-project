@@ -1,5 +1,6 @@
 package com.example.steam.config;
 
+import com.example.steam.controller.SteamOAuthController;
 import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.JwtToken;
 import com.example.steam.dto.User;
@@ -12,6 +13,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +38,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class JwtTokenProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
     private final Key key;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
@@ -90,6 +96,9 @@ public class JwtTokenProvider {
                 .setExpiration(new Date(now + 86400000))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+
+        logger.info("Generated Access Token: {}", accessToken);
+        logger.info("Generated Refresh Token: {}", refreshToken);
 
         return new JwtToken("Bearer", accessToken, refreshToken);
 

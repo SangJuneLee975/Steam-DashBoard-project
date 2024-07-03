@@ -1,6 +1,7 @@
 // UserService.java
 package com.example.steam.service;
 
+import com.example.steam.dto.CustomUserDetails;
 import com.example.steam.dto.User;
 import com.example.steam.model.GoogleUser;
 import com.example.steam.model.NaverUser;
@@ -20,9 +21,13 @@ public interface UserService {
 
    public User updateUserProfile(String username, Map<String, String> updates);
 
-   public User findOrCreateSteamUser(String steamId);
+   public CustomUserDetails findOrCreateSteamUser(String steamId, String steamNickname);
 
    public boolean isSteamLinked(String userId);
 
    public Optional<User> getUserWithSteamInfo(String userId);
+
+
+   void linkSteamAccount(String userId, String steamId, String steamNickname); // 계정에 스팀계정 연동 확인
 }
+
