@@ -87,6 +87,7 @@ public class JwtTokenProvider {
                 .claim("auth", authorities)
                 .claim("name", encodedName)
                 .claim("socialCode", socialCode)
+                .claim("steamId", userDetails.getSteamId())
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
@@ -132,6 +133,7 @@ public class JwtTokenProvider {
         Optional<SocialLogin> socialLoginOpt = socialLoginRepository.findByUser(user);
         Integer socialCode = claims.get("socialCode", Integer.class);
 
+        String steamId = claims.get("steamId", String.class);
 
         // UserDetails 객체를 만들어서 Authentication return
         // UserDetails: interface, User: UserDetails를 구현한 class
@@ -140,6 +142,7 @@ public class JwtTokenProvider {
                 user.getPassword(),
                 user.getName(),
                 socialCode,
+                steamId,
                 authorities
         );
 

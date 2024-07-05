@@ -48,6 +48,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getPassword(),
                 user.getName(),
                 user.getSocialCode(),
+                user.getSteamId(),
                 mapRolesToAuthorities(user.getRoles())  // 권한 설정
         );
     }

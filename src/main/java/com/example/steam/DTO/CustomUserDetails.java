@@ -1,25 +1,31 @@
 package com.example.steam.dto;
 
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
+@Getter
 public class CustomUserDetails implements UserDetails {
     private String username;
     private String password;
     private String name;
     private Integer socialCode;
+    private String steamId;
     private Collection<? extends GrantedAuthority> authorities;
 
     // User 엔티티를 기반으로 CustomUserDetails 객체를 생성하는 생성자
-    public CustomUserDetails(String username, String password, String name, Integer socialCode, Collection<? extends GrantedAuthority> authorities) {
+    public CustomUserDetails(String username, String password, String name, Integer socialCode, String steamId, Collection<? extends GrantedAuthority> authorities){
         this.username = username;
         this.password = password;
         this.name = name;
         this.socialCode = socialCode;
+        this.steamId = steamId;
         this.authorities = authorities;
     }
+
+
 
     // socialCode의 getter
     public Integer getSocialCode() {

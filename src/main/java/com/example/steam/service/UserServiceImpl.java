@@ -223,6 +223,7 @@ public class UserServiceImpl implements UserService {
                 user.getPassword(),
                 user.getName(),
                 socialCode,
+                user.getSteamId(),
                 authorities
         );
 
@@ -259,6 +260,7 @@ public class UserServiceImpl implements UserService {
                 user.getPassword(),
                 user.getName(),
                 user.getSocialCode(),
+                user.getSteamId(),
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
     }

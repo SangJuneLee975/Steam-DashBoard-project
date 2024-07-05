@@ -13,6 +13,14 @@ public class SteamController {
     @Autowired
     private SteamService steamService;
 
+    // 모든 게임 데이터를 수집하는 엔드포인트
+    @GetMapping("/allGameStats")
+    public Object getAllGameStats(Authentication authentication) {
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String steamId = userDetails.getUsername();
+        return steamService.getAllGameStats(steamId);
+    }
+
     @GetMapping("/profile")
     public SteamUser getSteamProfile(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

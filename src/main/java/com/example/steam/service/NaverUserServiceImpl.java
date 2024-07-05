@@ -113,6 +113,7 @@ public class NaverUserServiceImpl implements NaverUserService {
                 user.getPassword(),
                 user.getName(),
                 socialCode,
+                user.getSteamId(),
                 authorities
         );
 

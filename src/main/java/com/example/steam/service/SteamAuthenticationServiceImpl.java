@@ -111,6 +111,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 null,
                 user.getName(),
                 socialCode,
+                steamId,
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
 
@@ -210,6 +211,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                 user.getPassword(),
                 user.getName(),
                 user.getSocialCode(),
+                user.getSteamId(),
                 AuthorityUtils.createAuthorityList("ROLE_USER")
         );
 

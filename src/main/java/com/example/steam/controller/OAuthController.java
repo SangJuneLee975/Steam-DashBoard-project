@@ -73,6 +73,7 @@ public class OAuthController {
                     user.getPassword(),
                     user.getName(),
                     user.getSocialCode(),
+                    user.getSteamId(),
                     user.getAuthorities()
             );
 
@@ -118,6 +119,7 @@ public class OAuthController {
                     user.getPassword(),
                     user.getName(),
                     socialCode,
+                    user.getSteamId(),
                     user.getAuthorities()
             );
 
