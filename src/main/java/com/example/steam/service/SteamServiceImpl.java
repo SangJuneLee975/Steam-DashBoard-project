@@ -3,6 +3,7 @@ package com.example.steam.service;
 import com.example.steam.model.SteamUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -25,7 +26,13 @@ public class SteamServiceImpl implements SteamService {
     @Override
     public Object getOwnedGames(String steamId) {
         String url = String.format("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=%s&steamid=%s&include_appinfo=true", steamApiKey, steamId);
-        return restTemplate.getForObject(url, Object.class);
+        try {
+            return restTemplate.getForObject(url, Object.class);
+        } catch (HttpClientErrorException e) {
+            // 에러 로그 추가
+            System.out.println("Error: " + e.getResponseBodyAsString());
+            throw e;
+        }
     }
 
     @Override
