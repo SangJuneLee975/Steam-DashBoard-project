@@ -38,7 +38,13 @@ public class SteamServiceImpl implements SteamService {
     @Override
     public Object getRecentlyPlayedGames(String steamId) {
         String url = String.format("https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=%s&steamid=%s", steamApiKey, steamId);
-        return restTemplate.getForObject(url, Object.class);
+        try {
+            return restTemplate.getForObject(url, Object.class);
+        } catch (HttpClientErrorException e) {
+            // 에러 로그 추가
+            System.out.println("Error: " + e.getResponseBodyAsString());
+            throw e;
+        }
     }
 
     // 모든 게임 데이터를 수집하는 메서드
