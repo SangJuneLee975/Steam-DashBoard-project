@@ -18,6 +18,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/steam")
 public class SteamController {
@@ -66,11 +68,11 @@ public class SteamController {
 
 
     @GetMapping("/recentlyPlayedGames")
-    public Object getRecentlyPlayedGames(Authentication authentication) {
+    public ResponseEntity<?> getRecentlyPlayedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        String steamId = userDetails.getUsername();
+        String steamId = userDetails.getSteamId();
         try {
-            Object games = steamService.getRecentlyPlayedGames(steamId);
+            Map<String, Object> games = steamService.getRecentlyPlayedGames(steamId);
             return ResponseEntity.ok(games);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching games");

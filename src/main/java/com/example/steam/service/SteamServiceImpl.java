@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @Service
 public class SteamServiceImpl implements SteamService {
     @Value("${steam.api.key}")
@@ -36,10 +38,10 @@ public class SteamServiceImpl implements SteamService {
     }
 
     @Override
-    public Object getRecentlyPlayedGames(String steamId) {
+    public Map<String, Object> getRecentlyPlayedGames(String steamId) {
         String url = String.format("https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=%s&steamid=%s", steamApiKey, steamId);
         try {
-            return restTemplate.getForObject(url, Object.class);
+            return restTemplate.getForObject(url, Map.class);
         } catch (HttpClientErrorException e) {
             // 에러 로그 추가
             System.out.println("Error: " + e.getResponseBodyAsString());
