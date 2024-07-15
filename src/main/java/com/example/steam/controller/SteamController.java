@@ -47,6 +47,7 @@ public class SteamController {
         return steamService.getAllGameStats(steamId);
     }
 
+    // Steam 프로필을 가져오는 엔드포인트
     @GetMapping("/profile")
     public SteamUser getSteamProfile(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -54,6 +55,7 @@ public class SteamController {
         return steamService.getPlayerSummaries(steamId);
     }
 
+    // 소유한 게임들을 가져오는 엔드포인트
     @GetMapping("/ownedGames")
     public ResponseEntity<?> getOwnedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

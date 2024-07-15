@@ -64,6 +64,7 @@ public class SteamOAuthController {
     @Autowired
     private SteamAuthenticationService steamAuthService;
 
+    // Steam 로그인 URL을 생성하는 엔드포인트
     @GetMapping("/login")
     public ResponseEntity<?> getSteamLoginUrl() {
         String redirectUrl = "https://localhost:8080/oauth/steam/callback"; // 콜백 URL
@@ -76,6 +77,7 @@ public class SteamOAuthController {
     }
 
 
+    // Steam 연결 URL을 생성하는 엔드포인트
     @GetMapping("/connect")
     public ResponseEntity<?> getSteamConnectUrl() {
         try {
@@ -87,6 +89,7 @@ public class SteamOAuthController {
         }
     }
 
+    // Steam 콜백을 처리하는 엔드포인트
     @GetMapping("/callback")
     public void handleSteamCallback(@RequestParam("openid.claimed_id") String claimedId, @RequestParam Map<String, String> params, HttpServletResponse response) {
         try {
@@ -126,6 +129,7 @@ public class SteamOAuthController {
         }
     }
 
+    // Steam 계정을 연결하는 엔드포인트
     @PostMapping("/link")
     public ResponseEntity<?> linkSteamAccount(@RequestBody SteamLinkRequest steamLinkRequest) {
         String steamId = steamLinkRequest.getSteamId();
@@ -156,6 +160,7 @@ public class SteamOAuthController {
         throw new IllegalStateException("사용자 ID를 가져올 수 없습니다.");
     }
 
+    // Steam 프로필을 가져오는 엔드포인트
     @GetMapping("/profile/{steamId}")    //pathvariable
     public ResponseEntity<?> getSteamProfile(@PathVariable("steamId") String steamId) {
         String url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=" + steamApiKey + "&steamids=" + steamId;
