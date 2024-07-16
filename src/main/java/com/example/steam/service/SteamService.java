@@ -2,6 +2,7 @@ package com.example.steam.service;
 
 import com.example.steam.model.SteamUser;
 
+import java.util.List;
 import java.util.Map;
 
 public interface SteamService {
@@ -10,4 +11,8 @@ public interface SteamService {
     Map<String, Object> getRecentlyPlayedGames(String steamId);
 
     Object getAllGameStats(String steamId); // 모든 게임을 수집하는 메서드
+
+    List<String> getReviews(String appId);  // 스팀 게임의 리뷰를 크롤링
+
+    Map<String, String> getOwnedGamesList(String steamId); // 사용자가 소유한 게임 목록 가져오기
 }

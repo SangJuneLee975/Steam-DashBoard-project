@@ -18,6 +18,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -80,4 +81,12 @@ public class SteamController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching games");
         }
     }
+
+    @GetMapping("/reviews")
+    public ResponseEntity<List<String>> getReviews(@RequestParam String appId) {
+        List<String> reviews = steamService.getReviews(appId);
+        return ResponseEntity.ok(reviews);
+    }
+
+
 }
