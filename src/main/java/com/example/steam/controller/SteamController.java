@@ -8,6 +8,8 @@ import com.example.steam.service.SteamAuthenticationService;
 import com.example.steam.service.SteamService;
 import com.example.steam.model.SteamUser;
 import com.example.steam.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/steam")
 public class SteamController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SteamController.class);
 
     @Value("${steam.api.key}")
     private String steamApiKey;
@@ -83,10 +87,14 @@ public class SteamController {
     }
 
     @GetMapping("/reviews")
-    public ResponseEntity<List<String>> getReviews(@RequestParam String appId) {
-        List<String> reviews = steamService.getReviews(appId);
-        return ResponseEntity.ok(reviews);
+    public ResponseEntity<List<String>> getReviews(@RequestParam("appId") String appId) {
+        try {
+            List<String> reviews = steamService.getReviews(appId);
+            return ResponseEntity.ok(reviews);
+        } catch (Exception e) {
+            logger.error("appid리뷰를 가져오는 중에 오류가 발생: " + appId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
-
 
 }
