@@ -73,7 +73,7 @@ public class SteamController {
         }
     }
 
-
+    // 최근에 플레이한 게임들을 가져오는 엔드포인트
     @GetMapping("/recentlyPlayedGames")
     public ResponseEntity<?> getRecentlyPlayedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -86,6 +86,7 @@ public class SteamController {
         }
     }
 
+    // 스팀 커뮤니티 페이지에서 AppID기준으로 리뷰들을 가져오는 엔드포인트
     @GetMapping("/reviews")
     public ResponseEntity<List<String>> getReviews(@RequestParam("appId") String appId) {
         try {
