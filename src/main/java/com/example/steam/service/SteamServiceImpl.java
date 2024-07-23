@@ -65,6 +65,7 @@ public class SteamServiceImpl implements SteamService {
         return restTemplate.getForObject(url, Object.class);
     }
 
+    // 특정 게임의 리뷰를 가져오는 메서드
     @Override
     public List<String> getReviews(String appId) {
         List<String> reviews = new ArrayList<>();
@@ -81,7 +82,7 @@ public class SteamServiceImpl implements SteamService {
         return reviews;
     }
 
-
+    // 소유한 게임 목록을 가져오는 메서드
     @Override
     public Map<String, String> getOwnedGamesList(String steamId) {
         Map<String, String> gamesList = new HashMap<>();
