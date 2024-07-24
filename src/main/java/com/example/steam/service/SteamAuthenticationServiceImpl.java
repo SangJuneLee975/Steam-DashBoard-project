@@ -170,6 +170,7 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     }
 
 
+    // 스팀 콜백
     @Override
     @Transactional
     public void handleSteamCallback(String steamId, String displayName, String accessToken) {
