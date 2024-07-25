@@ -53,11 +53,13 @@ public class OAuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(OAuthController.class);
 
+    // 구글 로그인 URL 반환
     @GetMapping("/google/login")
     public String googleLogin() {
         return googleOAuthService.getGoogleAuthorizationUrl();
     }
 
+    // 구글 OAuth 콜백 처리
     @GetMapping("/google/callback")
     public void googleCallback(@RequestParam("code") String code, HttpServletResponse response) {
         logger.info("Google OAuth 콜백 처리 시작: code={}", code);
