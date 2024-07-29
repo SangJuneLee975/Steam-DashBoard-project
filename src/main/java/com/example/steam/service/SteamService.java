@@ -15,4 +15,15 @@ public interface SteamService {
     List<String> getReviews(String appId);  // 스팀 게임의 리뷰를 크롤링
 
     Map<String, String> getOwnedGamesList(String steamId); // 사용자가 소유한 게임 목록 가져오기
+
+    int getOwnedGamesCount(String steamId);
+
+    int getRecentlyPlayedGamesCount(String steamId);
+
+    public int getCurrentPlayers(String appId);
+
+    Map<String, Object> getGlobalAchievements(String gameid);
+
+    public SteamUser getSteamProfile(String steamId); //스팀 프로필 정보
+
 }

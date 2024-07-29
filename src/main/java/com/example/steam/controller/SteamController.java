@@ -20,6 +20,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -98,4 +99,101 @@ public class SteamController {
         }
     }
 
+    //
+    // 소유한 게임 수를 반환하는 엔드포인트 추가
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/ownedGamesCount")
+    public ResponseEntity<Integer> getOwnedGamesCount(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String steamId = userDetails.getSteamId();
+        try {
+            int gameCount = steamService.getOwnedGamesCount(steamId);
+            return ResponseEntity.ok(gameCount);
+        } catch (Exception e) {
+            logger.error("Error fetching owned games count for user: " + steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // 최근 2주 동안 플레이한 게임 수
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/recentlyPlayedGamesCount")
+    public ResponseEntity<Integer> getRecentlyPlayedGamesCount(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String steamId = userDetails.getSteamId();
+        try {
+            int recentGameCount = steamService.getRecentlyPlayedGamesCount(steamId);
+            return ResponseEntity.ok(recentGameCount);
+        } catch (Exception e) {
+            logger.error("Error fetching recently played games count for user: " + steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/globalAchievements")
+    public ResponseEntity<?> getGlobalAchievements(@RequestParam("gameid") String gameid) {
+        // 해당 로직을 구현합니다.
+        try {
+            // 예시: 해당 gameid에 대한 업적 데이터를 가져오는 로직 구현
+            Map<String, Object> achievements = steamService.getGlobalAchievements(gameid);
+            return ResponseEntity.ok(achievements);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching global achievements");
+        }
+    }
+
+    @GetMapping("/getPlayerSummaries")
+    public ResponseEntity<?> getPlayerSummaries(@RequestParam("steamId") String steamId) {
+        try {
+            SteamUser user = steamService.getPlayerSummaries(steamId);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            logger.error("Error fetching player summaries for user: " + steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/currentPlayers")
+    public ResponseEntity<?> getCurrentPlayers(@RequestParam("appid") String appid) {
+        try {
+            int playerCount = steamService.getCurrentPlayers(appid);
+            Map<String, Integer> response = new HashMap<>();
+            response.put("player_count", playerCount);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching current players for appid: " + appid, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/playerSummary")
+    public ResponseEntity<?> getPlayerSummary(@RequestParam("steamId") String steamId) {
+        try {
+            SteamUser user = steamService.getPlayerSummaries(steamId);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            logger.error("Error fetching player summaries for user: " + steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching player summary");
+        }
+    }
+
+    // 스팀 프로필 정보 엔드포인트
+    @GetMapping("/steamProfile")
+    public ResponseEntity<?> getSteamProfile(@RequestParam("steamId") String steamId) {
+        try {
+            SteamUser user = steamService.getSteamProfile(steamId);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            logger.error("Error fetching steam profile for user: " + steamId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching steam profile");
+        }
+    }
 }

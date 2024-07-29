@@ -1,10 +1,13 @@
 package com.example.steam.service;
 
 import com.example.steam.model.SteamUser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -19,6 +22,9 @@ import java.io.IOException;
 
 @Service
 public class SteamServiceImpl implements SteamService {
+
+    private static final Logger logger = LoggerFactory.getLogger(SteamServiceImpl.class);
+
     @Value("${steam.api.key}")
     private String steamApiKey;
 
@@ -102,5 +108,68 @@ public class SteamServiceImpl implements SteamService {
         return gamesList;
     }
 
+
+    @Override
+    public int getOwnedGamesCount(String steamId) {
+        String url = String.format("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=%s&steamid=%s&format=json", steamApiKey, steamId);
+        Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+        Map<String, Object> responseData = (Map<String, Object>) response.get("response");
+        return (int) responseData.get("game_count");
+    }
+
+    // 추가된 메서드 구현
+    @Override
+    public int getRecentlyPlayedGamesCount(String steamId) {
+        String url = String.format("https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=%s&steamid=%s", steamApiKey, steamId);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            Map<String, Object> responseData = (Map<String, Object>) response.get("response");
+            return (int) responseData.get("total_count");
+        } catch (HttpClientErrorException e) {
+            System.out.println("Error: " + e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    @Override
+    public int getCurrentPlayers(String appId) {
+        String url = String.format("https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?key=%s&appid=%s", steamApiKey, appId);
+        Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+        Map<String, Object> responseData = (Map<String, Object>) response.get("response");
+        return (int) responseData.get("player_count");
+    }
+
+    @Override
+    public Map<String, Object> getGlobalAchievements(String gameid) {
+        String url = String.format("https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=%s", gameid);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            return (Map<String, Object>) response.get("achievementpercentages");
+        } catch (HttpClientErrorException e) {
+            System.out.println("Error: " + e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    @Override
+    public SteamUser getSteamProfile(String steamId) {
+        String url = String.format("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=%s&steamids=%s", steamApiKey, steamId);
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            logger.info("Steam API Response: {}", response);
+
+            List<Map<String, Object>> players = (List<Map<String, Object>>) ((Map<String, Object>) response.get("response")).get("players");
+            if (players != null && !players.isEmpty()) {
+                return new ObjectMapper().convertValue(players.get(0), SteamUser.class);
+            }
+        } catch (HttpClientErrorException e) {
+            logger.error("HTTP error: {}", e.getResponseBodyAsString());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error: {}", e.getMessage(), e);
+            throw e;
+        }
+        return null;
+    }
 
 }
