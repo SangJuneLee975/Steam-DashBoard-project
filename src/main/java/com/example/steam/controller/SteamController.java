@@ -148,6 +148,7 @@ public class SteamController {
         }
     }
 
+    // 스팀 프로필 정보
     @GetMapping("/getPlayerSummaries")
     public ResponseEntity<?> getPlayerSummaries(@RequestParam("steamId") String steamId) {
         try {
