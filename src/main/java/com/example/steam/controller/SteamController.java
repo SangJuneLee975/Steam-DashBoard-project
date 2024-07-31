@@ -160,6 +160,7 @@ public class SteamController {
         }
     }
 
+    // 스팀 Appid로 현재 플레이 하고 있는 수
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/currentPlayers")
     public ResponseEntity<?> getCurrentPlayers(@RequestParam("appid") String appid) {
