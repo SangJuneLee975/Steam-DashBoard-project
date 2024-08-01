@@ -175,6 +175,7 @@ public class SteamController {
         }
     }
 
+    // 스팀 프로필 정보
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/playerSummary")
     public ResponseEntity<?> getPlayerSummary(@RequestParam("steamId") String steamId) {
