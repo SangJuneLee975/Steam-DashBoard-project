@@ -136,6 +136,7 @@ public class SteamController {
         }
     }
 
+    // appid에 대한 업적 데이터
     @GetMapping("/globalAchievements")
     public ResponseEntity<?> getGlobalAchievements(@RequestParam("gameid") String gameid) {
         // 해당 로직을 구현합니다.
