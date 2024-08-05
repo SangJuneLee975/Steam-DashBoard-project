@@ -53,7 +53,7 @@ public class SteamController {
         return steamService.getAllGameStats(steamId);
     }
 
-    // Steam 프로필을 가져오는 엔드포인트
+    // 스팀 프로필을 가져오는 엔드포인트
     @GetMapping("/profile")
     public SteamUser getSteamProfile(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
