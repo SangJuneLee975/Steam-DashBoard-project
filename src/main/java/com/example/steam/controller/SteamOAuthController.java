@@ -35,7 +35,7 @@ public class SteamOAuthController {
     private static final Logger logger = LoggerFactory.getLogger(SteamOAuthController.class);
 
     @Value("${steam.api.key}")
-    private String steamApiKey;
+    private String steamApiKey;   // steam api key
 
     @Value("${steam.api.id}")
     private String steamApiId;
