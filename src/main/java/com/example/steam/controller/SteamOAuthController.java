@@ -129,7 +129,7 @@ public class SteamOAuthController {
         }
     }
 
-    // Steam 계정을 연결하는 엔드포인트
+    // Steam 계정을 연결하는    엔드포인트
     @PostMapping("/link")
     public ResponseEntity<?> linkSteamAccount(@RequestBody SteamLinkRequest steamLinkRequest) {
         String steamId = steamLinkRequest.getSteamId();
@@ -151,7 +151,7 @@ public class SteamOAuthController {
         }
     }
 
-    // 현재 로그인된 사용자 ID를 가져옴
+    // 현재 로그인된 사용자 ID를 가져오기
     private String getUserIdFromSessionOrToken() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
