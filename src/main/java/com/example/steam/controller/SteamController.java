@@ -74,7 +74,7 @@ public class SteamController {
         }
     }
 
-    // 최근에 플레이한 게임들을 가져오는 엔드포인트
+    // 최근 플레이한 게임들을 가져오는 엔드포인트
     @GetMapping("/recentlyPlayedGames")
     public ResponseEntity<?> getRecentlyPlayedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
