@@ -48,7 +48,7 @@ public class SecurityConfig  {
     private String clientId;
 
 
-    // OAuth2 로그인 구성을 위한 ClientRegistrationRepository 빈을 등록
+    // OAuth2 로그인 구성을 위한 ClientRegistrationRepository 빈 등록
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         return new InMemoryClientRegistrationRepository(steamClient());
