@@ -151,7 +151,7 @@ public class SteamOAuthController {
         }
     }
 
-    // 현재 로그인된 사용자 ID를 가져오는 메소드
+    // 로그인된 사용자 ID를 가져오는 메소드
     private String getUserIdFromSessionOrToken() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {

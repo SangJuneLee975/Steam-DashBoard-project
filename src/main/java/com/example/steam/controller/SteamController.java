@@ -87,7 +87,7 @@ public class SteamController {
         }
     }
 
-    // 스팀 커뮤니티 페이지에서 AppID기준으로 리뷰들을 가져오는 엔드포인트
+    // 스팀 커뮤니티 페이지에서 Appid기준으로 리뷰들을 가져오는 엔드포인트
     @GetMapping("/reviews")
     public ResponseEntity<List<String>> getReviews(@RequestParam("appId") String appId) {
         try {
