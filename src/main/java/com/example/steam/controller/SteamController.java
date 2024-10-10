@@ -46,48 +46,67 @@ public class SteamController {
 
 
     // 모든 게임 데이터를 수집하는 엔드포인트
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/allGameStats")
     public Object getAllGameStats(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String steamId = userDetails.getUsername();
+        logger.info("Fetching all game stats for steamId: {}", steamId);
         return steamService.getAllGameStats(steamId);
     }
 
     // 스팀 프로필을 가져오는 메소드
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/profile")
     public SteamUser getSteamProfile(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String steamId = userDetails.getUsername();
+        logger.info("Fetching steam profile for steamId: {}", steamId);
         return steamService.getPlayerSummaries(steamId);
     }
 
     // 소유한 게임들을 가져오는 엔드포인트
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/ownedGames")
     public ResponseEntity<?> getOwnedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String steamId = userDetails.getSteamId();
+        logger.info("Fetching owned games for steamId: {}", steamId);
         try {
             Object games = steamService.getOwnedGames(steamId);
+            logger.info("Successfully fetched owned games for steamId: {}", steamId);
             return ResponseEntity.ok(games);
+        } catch (HttpClientErrorException e) {
+            logger.error("Error fetching owned games for steamId: {}, Response: {}", steamId, e.getResponseBodyAsString());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error fetching games - Bad Request: " + e.getResponseBodyAsString());
         } catch (Exception e) {
+            logger.error("Unexpected error fetching owned games for steamId: {}", steamId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching games");
         }
     }
 
     // 최근 플레이한 게임들을 가져오는 엔드포인트
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/recentlyPlayedGames")
     public ResponseEntity<?> getRecentlyPlayedGames(Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String steamId = userDetails.getSteamId();
+        logger.info("Fetching recently played games for steamId: {}", steamId);
         try {
             Map<String, Object> games = steamService.getRecentlyPlayedGames(steamId);
+            logger.info("Successfully fetched recently played games for steamId: {}", steamId);
             return ResponseEntity.ok(games);
+        } catch (HttpClientErrorException e) {
+            logger.error("Error fetching recently played games for steamId: {}, Response: {}", steamId, e.getResponseBodyAsString());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error fetching games - Bad Request: " + e.getResponseBodyAsString());
         } catch (Exception e) {
+            logger.error("Unexpected error fetching recently played games for steamId: {}", steamId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching games");
         }
     }
 
     // 스팀 커뮤니티 페이지에서 Appid기준으로 리뷰들을 가져오는 엔드포인트
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/reviews")
     public ResponseEntity<List<String>> getReviews(@RequestParam("appId") String appId) {
         try {
@@ -101,7 +120,7 @@ public class SteamController {
 
     //
     // 소유한 게임 수를 반환하는 엔드포인트 추가
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/ownedGamesCount")
     public ResponseEntity<Integer> getOwnedGamesCount(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -119,7 +138,7 @@ public class SteamController {
     }
 
     // 최근 2주 동안 플레이한 게임 수
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/recentlyPlayedGamesCount")
     public ResponseEntity<Integer> getRecentlyPlayedGamesCount(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -137,6 +156,7 @@ public class SteamController {
     }
 
     // appid에 대한 업적 데이터
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/globalAchievements")
     public ResponseEntity<?> getGlobalAchievements(@RequestParam("gameid") String gameid) {
         // 해당 로직을 구현합니다.
@@ -150,6 +170,7 @@ public class SteamController {
     }
 
     // 스팀 프로필 정보
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/getPlayerSummaries")
     public ResponseEntity<?> getPlayerSummaries(@RequestParam("steamId") String steamId) {
         try {
@@ -162,7 +183,7 @@ public class SteamController {
     }
 
     // 스팀 Appid로 현재 플레이 하고 있는 수
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/currentPlayers")
     public ResponseEntity<?> getCurrentPlayers(@RequestParam("appid") String appid) {
         try {
@@ -177,7 +198,7 @@ public class SteamController {
     }
 
     // 스팀 프로필 정보
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/playerSummary")
     public ResponseEntity<?> getPlayerSummary(@RequestParam("steamId") String steamId) {
         try {
@@ -190,6 +211,7 @@ public class SteamController {
     }
 
     // 스팀 프로필 정보 엔드포인트
+    @CrossOrigin(origins = "https://stdash.shop")
     @GetMapping("/steamProfile")
     public ResponseEntity<?> getSteamProfile(@RequestParam("steamId") String steamId) {
         try {

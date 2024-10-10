@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // 모든 경로에 대해
-                .allowedOrigins("https://localhost:3000") // 이 출처의 프론트엔드 요청을 허용
+                .allowedOrigins("https://localhost:3000", "https://stdash.shop") // 이 출처의 프론트엔드 요청을 허용
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메소드 지정
                 .allowedHeaders("*")
                 .allowCredentials(true); // 쿠키 등 인증 정보를 함께 보낼 수 있도록 허용
@@ -38,7 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("https://localhost:3000")
+                        .allowedOrigins("https://localhost:3000", "https://stdash.shop")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

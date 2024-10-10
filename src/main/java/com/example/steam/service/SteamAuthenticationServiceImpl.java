@@ -10,14 +10,14 @@ import com.example.steam.repository.SocialLoginRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.minidev.json.JSONObject;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,15 +27,24 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.steam.dto.User;
 import com.example.steam.repository.UserRepository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.security.MessageDigest;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
-
+import java.util.Base64;
 
 @Service
 public class SteamAuthenticationServiceImpl implements SteamAuthenticationService {
@@ -79,6 +88,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
         parameters.put("openid.identity", "http://specs.openid.net/auth/2.0/identifier_select");
         parameters.put("openid.claimed_id", "http://specs.openid.net/auth/2.0/identifier_select");
 
+        logger.info("Steam 로그인 URL 생성: {}", baseUrl);
+
         return baseUrl + "?" + parameters.keySet().stream()
                 .map(key -> key + "=" + URLEncoder.encode(parameters.get(key), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
@@ -99,6 +110,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
                             .steamId(steamId)
                             .build();
                     userRepository.save(newUser);
+
+                    logger.info("새로운 Steam 사용자 생성: {}", newUser);
                     return newUser;
                 });
 
@@ -132,10 +145,51 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     }
 
     // Steam 응답을 검증하는 메서드
-    public boolean validateSteamResponse(Map<String, String> params) {
 
-        return true;
+    @Override
+    public boolean validateSteamResponse(Map<String, String> params) {
+        // Steam 서버에 서명 검증 요청
+        return validateSignatureWithSteam(params);
     }
+
+
+
+
+    // Steam 서버에 검증 요청
+    private boolean validateSignatureWithSteam(Map<String, String> params) {
+        try {
+            String checkAuthenticationUrl = "https://steamcommunity.com/openid/login";
+            // 검증 요청 시 openid.mode를 check_authentication으로 설정
+            Map<String, String> verificationParams = new HashMap<>(params);
+            verificationParams.put("openid.mode", "check_authentication");
+
+            // 파라미터를 URL 인코딩하여 요청 본문 구성
+            String requestBody = verificationParams.entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&"));
+
+            // HTTP POST 요청 전송
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(checkAuthenticationUrl, entity, String.class);
+
+            // Steam 서버 응답 확인
+            if (response.getStatusCode() == HttpStatus.OK) {
+                String responseBody = response.getBody();
+                logger.info("Steam 서명 검증 응답: {}", responseBody);
+                return responseBody.contains("is_valid:true");
+            } else {
+                logger.error("Steam 서명 검증 실패: HTTP {}", response.getStatusCode());
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Steam 서명 검증 중 오류 발생", e);
+            return false;
+        }
+    }
+
 
     // claimedId에서 Steam ID를 추출하는 메서드
     public String extractSteamId(String claimedId) {
@@ -230,6 +284,8 @@ public class SteamAuthenticationServiceImpl implements SteamAuthenticationServic
     public String getSteamNickname(String steamId) {
         String url = String.format("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=%s&steamids=%s", steamApiKey, steamId);
         try {
+            logger.info("Steam API 호출: {}", url);
+
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 JsonNode root = objectMapper.readTree(response.getBody());

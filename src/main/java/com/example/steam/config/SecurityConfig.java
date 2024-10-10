@@ -3,6 +3,8 @@ package com.example.steam.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -32,9 +35,13 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 
 @Configuration
@@ -64,7 +71,7 @@ public class SecurityConfig  {
 
                 .authorizationGrantType(org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE)
 
-                .redirectUri("https://localhost:8080/login/oauth2/code/steam")
+                .redirectUri("https://stdash.shop/login/oauth2/code/steam")
                 // 인증 성공 후 리디렉트될 URI를 지정합니다.
 
                 .authorizationUri("https://steamcommunity.com/openid/login")
@@ -87,16 +94,15 @@ public class SecurityConfig  {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/user/signup", "/user/checkUserId").permitAll();
                     auth.requestMatchers("/user/login").permitAll();
-                    auth.requestMatchers("/oauth/**").permitAll();
+                    auth.requestMatchers("/oauth/steam/login/callback").permitAll(); // 로그인 콜백 허용
+                    auth.requestMatchers("/oauth/steam/link/callback").permitAll(); // 계정 연동 콜백 허용
                     auth.requestMatchers("/user/**").authenticated();
                     auth.requestMatchers("/user/profile").authenticated();
-                    auth.requestMatchers("/oauth/steam/**").permitAll();
+                    auth.requestMatchers("/login/**").permitAll();
                     auth.requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER");
+                    auth.requestMatchers("/steam/**").permitAll();
                     auth.requestMatchers("/admin/**").hasRole("ADMIN");
                     auth.anyRequest().permitAll();
-
-
-
                 })
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
@@ -123,6 +129,7 @@ public class SecurityConfig  {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("https://stdash.shop"); // 모든 도메인 허용
         configuration.addAllowedOrigin("https://localhost:3000");
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
@@ -135,6 +142,26 @@ public class SecurityConfig  {
         @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    public WebClient webClient() {
+
+        HttpClient httpClient = HttpClient.create()
+                .secure(sslSpec -> {
+                    try {
+                        sslSpec.sslContext(SslContextBuilder.forClient()
+                                .trustManager(InsecureTrustManagerFactory.INSTANCE)  // 모든 인증서를 신뢰
+                                .build());
+                    } catch (SSLException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+        // WebClient 설정
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
     }
 
 //    @Bean

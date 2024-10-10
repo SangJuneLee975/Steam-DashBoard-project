@@ -29,7 +29,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://stdash.shop"})
 public class UserController {
 
     private final UserService userService;

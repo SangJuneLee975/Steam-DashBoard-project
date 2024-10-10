@@ -87,7 +87,7 @@ public class OAuthController {
 
             String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();
 
-            String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
+            String redirectUrlWithToken = "https://stdash.shop/?token=" + jwt;
             response.sendRedirect(redirectUrlWithToken);
         } catch (Exception e) {
             logger.error("Google OAuth 콜백 처리 중 오류 발생", e);
@@ -134,7 +134,7 @@ public class OAuthController {
             String jwt = jwtTokenProvider.generateToken(authentication).getAccessToken();
 
             // 클라이언트에 전달할 토큰 정보
-            String redirectUrlWithToken = "https://localhost:3000/?token=" + jwt;
+            String redirectUrlWithToken = "https://stdash.shop/?token=" + jwt;
             response.sendRedirect(redirectUrlWithToken);
         } catch (Exception e) {
             logger.error("Naver OAuth 콜백 처리 중 오류 발생", e);
