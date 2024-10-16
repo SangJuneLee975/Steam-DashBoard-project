@@ -1,4 +1,5 @@
 # Steam DashBoard Project
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white)
 
 ### 기간
 2024-04-08 ~ 2024-10-10
