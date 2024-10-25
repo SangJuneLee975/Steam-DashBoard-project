@@ -1,3 +1,5 @@
+### 프로젝트 소개 :computer:
+
 # Steam DashBoard Project
 
 ### 기간
@@ -6,7 +8,7 @@
 ## 소개
 Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각화 기능을 제공합니다.
 
-## 주요 기능
+## 주요 기능 :star2:
 ### 스팀 연동 및 소셜 로그인
 - Google, 네이버 소셜 로그인을 지원하여 간편한 로그인 지원 및 OpenID 연동을 통해 스팀계정과 연동이 가능
 - Steam 연동 후 사용자 정보를 기반으로 데이터를 시각화하여 보여줌
@@ -17,7 +19,7 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 - **그래프**: 많이 플레이한 게임에 대한 통계를 그래프로 보여줌
 - **차트**: 최근 2주간 플레이한 게임을 파이 차트 제공
 
-## 서브 기능
+## 서브 기능 :star:
 ### Todolist 기능 (Web Speech API 사용)
 - 음성 인식을 통한 할 일 추가 및 수정 기능 지원
 - Web Speech API를 이용하여 사용자가 음성으로 할 일을 추가 & 수정 할 수 있음
@@ -26,7 +28,7 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 - 키보드 및 마우스를 이용한 피아노 연주 기능
 
 
-## 기술 스택
+## 기술 스택 :hammer:
 
 ### 플랫폼
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white)](https://ubuntu.com/) 
@@ -61,3 +63,7 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 [![Material-UI](https://img.shields.io/badge/Material--UI-007FFF?style=for-the-badge&logo=mui&logoColor=white)](https://mui.com/) 
 [![D3.js](https://img.shields.io/badge/D3.js-F9A03C?style=for-the-badge&logo=d3-dot-js&logoColor=white)](https://d3js.org/) 
 [![Recoil](https://img.shields.io/badge/Recoil-3578E5?style=for-the-badge&logo=Recoil&logoColor=white)](https://recoiljs.org/)
+
+
+### 구조도 :wrench:
+
