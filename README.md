@@ -66,4 +66,5 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 
 
 ### 구조도 :wrench:
+![스트럭 구조도](https://github.com/user-attachments/assets/0b8c24bb-1bc8-4bd5-bb24-947fa9de356a)
 
