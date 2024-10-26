@@ -2,31 +2,11 @@
 
 # Steam DashBoard Project
 
-### 기간
+### 진행 기간
 2024-04-08 ~ 2024-10-10
 
 ## 소개
-Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각화 기능을 제공합니다.
-
-## 주요 기능 :star2:
-### 스팀 연동 및 소셜 로그인
-- Google, 네이버 소셜 로그인을 지원하여 간편한 로그인 지원 및 OpenID 연동을 통해 스팀계정과 연동이 가능
-- Steam 연동 후 사용자 정보를 기반으로 데이터를 시각화하여 보여줌
-
-### 데이터 시각화
-- **대시보드**: , 스팀 계정의 정보를 볼 수 있음
-- **3D 캐러셀**: 보유한 스팀 게임 목록을 3D 캐러셀 형태로 제공하며, 게임을 클릭하면 관련 데이터의 워드클라우드 제공
-- **그래프**: 많이 플레이한 게임에 대한 통계를 그래프로 보여줌
-- **차트**: 최근 2주간 플레이한 게임을 파이 차트 제공
-
-## 서브 기능 :star:
-### Todolist 기능 (Web Speech API 사용)
-- 음성 인식을 통한 할 일 추가 및 수정 기능 지원
-- Web Speech API를 이용하여 사용자가 음성으로 할 일을 추가 & 수정 할 수 있음
-
-### 피아노 연주 기능 (Web Audio API 사용)
-- 키보드 및 마우스를 이용한 피아노 연주 기능
-
+Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각화 기능으로 제공합니다.
 
 ## 기술 스택 :hammer:
 
@@ -64,7 +44,46 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 [![D3.js](https://img.shields.io/badge/D3.js-F9A03C?style=for-the-badge&logo=d3-dot-js&logoColor=white)](https://d3js.org/) 
 [![Recoil](https://img.shields.io/badge/Recoil-3578E5?style=for-the-badge&logo=Recoil&logoColor=white)](https://recoiljs.org/)
 
+## 주요 기능 :star2:
+### 스팀 연동 및 소셜 로그인
+- Google, 네이버 소셜 로그인을 지원하여 간편하게 로그인할 수 있으며, OpenID 연동을 통해 Steam 계정과 연결할 수 있습니다.
+- Steam 연동 후, 사용자 정보를 바탕으로 다양한 시각화 자료를 제공합니다.
 
-### 구조도 :wrench:
+### 데이터 시각화
+
+
+
+![대시보드](https://github.com/user-attachments/assets/85f5a2e7-cfc4-4605-81c2-d6ff05745b78)
+- **대시보드**: 스팀 계정의 정보를 볼 수 있음
+
+  
+ ![게임목록](https://github.com/user-attachments/assets/109b55a8-fc24-46d5-b5ee-631f3377051b)
+- **3D 캐러셀**: 보유한 스팀 게임 목록을 3D 캐러셀 형태로 제공하며, 게임을 클릭하면 관련 데이터의 워드클라우드 제공
+
+  
+ ![그래프](https://github.com/user-attachments/assets/f4ca3675-a274-4f4b-aa66-29e56602f2ab)
+- **그래프**: 많이 플레이한 게임에 대한 통계를 그래프로 보여줌
+
+  
+ ![차트](https://github.com/user-attachments/assets/741e922a-894e-4f4d-ba3b-21c51ac36bd1)
+- **차트**: 최근 2주간 플레이한 게임을 파이 차트 제공
+
+
+## 서브 기능 :star:
+
+![Todolist](https://github.com/user-attachments/assets/d8ad5bf2-1db4-464d-b53e-37e796838745)
+![Todolist-mic2](https://github.com/user-attachments/assets/7318cec4-f241-4847-bdd1-e709534a168e)
+### Todolist 기능 (Web Speech API 사용)
+- 음성 인식을 통한 할 일 추가 및 수정 기능 지원
+- Web Speech API를 활용하여 사용자가 음성으로 할 일을 추가 & 수정 할 수 있음
+
+![Piano-2](https://github.com/user-attachments/assets/4106e73e-7f0b-40e6-8bb3-525f235a3e5c)
+### 피아노 연주 기능 (Web Audio API 사용)
+- 키보드 및 마우스를 이용한 피아노 연주 기능
+
+
+
+
+### 인프라 구조도 :wrench:
 ![스트럭 구조도](https://github.com/user-attachments/assets/0b8c24bb-1bc8-4bd5-bb24-947fa9de356a)
 
