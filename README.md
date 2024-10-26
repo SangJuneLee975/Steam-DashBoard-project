@@ -44,6 +44,10 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 [![D3.js](https://img.shields.io/badge/D3.js-F9A03C?style=for-the-badge&logo=d3-dot-js&logoColor=white)](https://d3js.org/) 
 [![Recoil](https://img.shields.io/badge/Recoil-3578E5?style=for-the-badge&logo=Recoil&logoColor=white)](https://recoiljs.org/)
 
+## ERD :card_file_box:
+![DashBoard_ERD](https://github.com/user-attachments/assets/936971b8-b18a-448f-90be-9241d0116325)
+
+
 ## 주요 기능 :star2:
 ### 스팀 연동 및 소셜 로그인
 - Google, 네이버 소셜 로그인을 지원하여 간편하게 로그인할 수 있으며, OpenID 연동을 통해 Steam 계정과 연결할 수 있습니다.
