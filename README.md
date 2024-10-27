@@ -73,7 +73,7 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 - **차트**: 최근 2주간 플레이한 게임을 파이 차트 제공
 
 
-## 서브 기능 :star:
+## 부가 서비스 :star:
 
 ![Todolist](https://github.com/user-attachments/assets/d8ad5bf2-1db4-464d-b53e-37e796838745)
 ![Todolist-mic2](https://github.com/user-attachments/assets/7318cec4-f241-4847-bdd1-e709534a168e)
