@@ -32,8 +32,8 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 
 ### 프레임워크
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=Spring-Boot&logoColor=white)](https://spring.io/projects/spring-boot) 
-[![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=Spring-Security&logoColor=white)](https://spring.io/projects/spring-security) 
-[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=React&logoColor=black)](https://reactjs.org/)
+
+
 
 ### 라이브러리
 [![Ant Design](https://img.shields.io/badge/Ant%20Design-0170FE?style=for-the-badge&logo=Ant-Design&logoColor=white)](https://ant.design/) 
@@ -43,6 +43,13 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 [![Material-UI](https://img.shields.io/badge/Material--UI-007FFF?style=for-the-badge&logo=mui&logoColor=white)](https://mui.com/) 
 [![D3.js](https://img.shields.io/badge/D3.js-F9A03C?style=for-the-badge&logo=d3-dot-js&logoColor=white)](https://d3js.org/) 
 [![Recoil](https://img.shields.io/badge/Recoil-3578E5?style=for-the-badge&logo=Recoil&logoColor=white)](https://recoiljs.org/)
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=Spring-Security&logoColor=white)](https://spring.io/projects/spring-security) 
+[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=React&logoColor=black)](https://reactjs.org/)
+
+### 개발툴
+[![DBeaver](https://img.shields.io/badge/DBeaver-1B5B95?style=for-the-badge&logo=DBeaver&logoColor=white)](https://dbeaver.io/)
+
+
 
 ## ERD :card_file_box:
 ![DashBoard_ERD](https://github.com/user-attachments/assets/936971b8-b18a-448f-90be-9241d0116325)
