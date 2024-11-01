@@ -49,6 +49,8 @@ Steam 계정 연동을 통해 사용자의 게임 데이터를 다양한 시각�
 
 ### 개발툴
 [![DBeaver](https://img.shields.io/badge/DBeaver-1B5B95?style=for-the-badge&logo=DBeaver&logoColor=white)](https://dbeaver.io/)
+[![Visual Studio Code](https://img.shields.io/badge/Visual_Studio_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
+[![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ_IDEA-000000?style=for-the-badge&logo=intellij-idea&logoColor=white)](https://www.jetbrains.com/idea/)
 
 
 
